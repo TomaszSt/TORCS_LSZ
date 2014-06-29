@@ -667,6 +667,8 @@ void Driver::update(tSituation *s)
 		tAngle		+= car->_trkPos.seg->angle[i];
 	}
 	tAngle /= 7;
+	float normalAngle = tAngle;
+	NORM_PI_PI(normalAngle);
 	float tArc			= 0.0;
 	char* segName;
 	switch (seg) {
@@ -721,8 +723,10 @@ void Driver::update(tSituation *s)
 	maxNextAngle = tAngle - maxNextAngle;
 
 	//printf("SEG = %s ID = %d DIST = %.2f AVG = %.2f MIN = %.2f MAX = %.2f\n", segName, id, distance, avgNextAngle, minNextAngle, maxNextAngle);
-	printf("ANGL = %.2f\tARC = %.2f\tAVG = %.2f\tMIN = %.2f\tMAX = %.2f\n", tAngle, tArc, avgNextAngle, minNextAngle, maxNextAngle);
+	//printf("ANGL = %.2f\tARC = %.2f\tAVG = %.2f\tMIN = %.2f\tMAX = %.2f\n", tAngle, tArc, avgNextAngle, minNextAngle, maxNextAngle);
 	//printf("TANGLE = %.2f	TRACKANGLE = %.2f	DIFF = %.2f\n", tAngle, trackAngle, tAngle - trackAngle);
+	// trying to find some relation between corner hardness and it's length and angle
+	printf("DIST = %.2f\tARC = %.2f\tAVG = %.2f\n", distance, tArc, avgNextAngle);
 }
 
 
