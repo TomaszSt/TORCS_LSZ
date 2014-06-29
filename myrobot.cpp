@@ -111,29 +111,29 @@ static void newRace(int index, tCarElt* car, tSituation *s)
 // Drive during race.
 static void drive(int index, tCarElt* car, tSituation *s)
 {
-	//driver[index]->drive(s);
-	memset(&car->ctrl, 0, sizeof(tCarCtrl));
+	driver[index]->drive(s);
+	//memset(&car->ctrl, 0, sizeof(tCarCtrl));
 
-    float angle;
-    const float SC = 1.0;
+ //   float angle;
+ //   const float SC = 1.0;
 
-    angle = RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
-    NORM_PI_PI(angle); // put the angle back in the range from -PI to PI
-    angle -= SC*car->_trkPos.toMiddle/car->_trkPos.seg->width;
+ //   angle = RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
+ //   NORM_PI_PI(angle); // put the angle back in the range from -PI to PI
+ //   angle -= SC*car->_trkPos.toMiddle/car->_trkPos.seg->width;
 
-    // set up the values to return
-    car->ctrl.steer = angle / car->_steerLock;
-    
-    car->ctrl.accelCmd = 0.3; // 30% accelerator pedal
-    car->ctrl.brakeCmd = 0.0; // no brakes
-	printf("gear: %d\n", car->priv.gear);
-	if (car->priv.gear == 2) {
-		car->ctrl.gear = 2;
-	} else if (car->priv.gear == 1 && car->priv.enginerpm / car->priv.enginerpmMax > 0.7) {
-		car->ctrl.gear = 2; // second gear
-	} else if (car->priv.gear == 0 || car->priv.gear == 1) {
-		car->ctrl.gear = 1; // first gear
-	}
+ //   // set up the values to return
+ //   car->ctrl.steer = angle / car->_steerLock;
+ //   
+ //   car->ctrl.accelCmd = 0.3; // 30% accelerator pedal
+ //   car->ctrl.brakeCmd = 0.0; // no brakes
+	//printf("gear: %d\n", car->priv.gear);
+	//if (car->priv.gear == 2) {
+	//	car->ctrl.gear = 2;
+	//} else if (car->priv.gear == 1 && car->priv.enginerpm / car->priv.enginerpmMax > 0.7) {
+	//	car->ctrl.gear = 2; // second gear
+	//} else if (car->priv.gear == 0 || car->priv.gear == 1) {
+	//	car->ctrl.gear = 1; // first gear
+	//}
 }
 
 

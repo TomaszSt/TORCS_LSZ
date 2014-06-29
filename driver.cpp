@@ -653,6 +653,47 @@ void Driver::update(tSituation *s)
 	pit->update();
 	alone = isAlone();
 	learn->update(s, track, car, alone, myoffset, car->_trkPos.seg->width/WIDTHDIV-BORDER_OVERTAKE_MARGIN, radius);
+
+	float trackAngle	= mycardata->getTrackangle();
+	float speedTr		= mycardata->getSpeedInTrackDirection();
+	float carAngle		= mycardata->getCarAngle();
+	float toMiddle		= car->_trkPos.toMiddle/car->_trkPos.seg->width;
+	float yaw			= car->_yaw;
+	float dist			= getDistToSegEnd();
+	int seg				= car->_trkPos.seg->type;
+	int id				= car->_trkPos.seg->id;
+	float tAngle		= car->_trkPos.seg->angle[0];
+	for (int i = 0 ; i < 7 ; i++) {
+		tAngle		+= car->_trkPos.seg->angle[i];
+	}
+	tAngle /= 7;
+	float tArc			= car->_trkPos.seg->arc;
+	char* segName;
+	switch (seg) {
+		case TR_LFT:
+			segName = "LEFT";
+			break;
+		case TR_STR:
+			segName = "STR";
+			break;
+		case TR_RGT:
+			segName = "RIGHT";
+			break;
+		default:
+			break;
+	}
+
+	float distance = 0.0;
+	tTrackSeg tempSeg = *(car->_trkPos.seg);
+	tTrackSeg nextSeg = *(tempSeg.next);
+	while (tempSeg.type == nextSeg.type) {
+		distance += tempSeg.length;
+		tempSeg = *(tempSeg.next);
+		nextSeg = *(nextSeg.next);
+	}
+	distance += tempSeg.length;
+
+	printf("SEG = %s ID = %d ANG = %.2f ARC = %.2f DIST = %.2f\n", segName, id, tAngle, tArc, distance);
 }
 
 
