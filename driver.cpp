@@ -1,21 +1,21 @@
 /***************************************************************************
 
-    file                 : driver.cpp
-    created              : Thu Dec 20 01:21:49 CET 2002
-    copyright            : (C) 2002-2004 Bernhard Wymann
-    email                : berniw@bluewin.ch
-    version              : $Id: driver.cpp,v 1.16.2.2 2008/12/31 03:53:53 berniw Exp $
+file                 : driver.cpp
+created              : Thu Dec 20 01:21:49 CET 2002
+copyright            : (C) 2002-2004 Bernhard Wymann
+email                : berniw@bluewin.ch
+version              : $Id: driver.cpp,v 1.16.2.2 2008/12/31 03:53:53 berniw Exp $
 
- ***************************************************************************/
+***************************************************************************/
 
 /***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************/
 
 #include "driver.h"
 
@@ -108,7 +108,7 @@ void Driver::initTrack(tTrack* t, void *carHandle, void **carParmHandle, tSituat
 	if (*carParmHandle == NULL) {
 		snprintf(buffer, BUFSIZE, "drivers/myrobot/%d/default.xml", INDEX);
 		*carParmHandle = GfParmReadFile(buffer, GFPARM_RMODE_STD);
-    }
+	}
 
 	// Create a pit stop strategy object.
 	strategy = new SimpleStrategy2();
@@ -190,7 +190,7 @@ void Driver::drive(tSituation *s)
 			car->_accelCmd = filterTCL(filterTrk(filterOverlap(getAccel())));
 		} else {
 			car->_accelCmd = 0.0f;
-  		}
+		}
 		car->_clutchCmd = getClutch();
 
 	}
@@ -216,9 +216,9 @@ void Driver::endRace(tSituation *s)
 
 
 /***************************************************************************
- *
- * utility functions
- *
+*
+* utility functions
+*
 ***************************************************************************/
 
 
@@ -268,9 +268,9 @@ float Driver::getAllowedSpeed(tTrackSeg *segment)
 	}
 	// README: the outcommented code is the more save version.
 	/*if ((alone > 0 && fabs(myoffset) < USE_LEARNED_OFFSET_RANGE) ||
-		dr < 0.0f
+	dr < 0.0f
 	) {
-		r += dr;
+	r += dr;
 	}*/
 	r = MAX(1.0, r);
 
@@ -667,7 +667,7 @@ void Driver::update(tSituation *s)
 		tAngle		+= car->_trkPos.seg->angle[i];
 	}
 	tAngle /= 7;
-	float tArc			= car->_trkPos.seg->arc;
+	float tArc			= 0.0;
 	char* segName;
 	switch (seg) {
 		case TR_LFT:
@@ -693,7 +693,36 @@ void Driver::update(tSituation *s)
 	}
 	distance += tempSeg.length;
 
-	printf("SEG = %s ID = %d ANG = %.2f ARC = %.2f DIST = %.2f\n", segName, id, tAngle, tArc, distance);
+
+
+	float maxNextAngle = -999.0;
+	float minNextAngle = 999.0;
+	float avgNextAngle = 0.0;
+	int turnLength = 0;
+
+	tTrackSeg furtherSeg = *(nextSeg.next);
+	while (nextSeg.type == furtherSeg.type) {
+		float tempAngle		= nextSeg.angle[0];
+		for (int i = 0 ; i < 7 ; i++) {
+			tempAngle		+= nextSeg.angle[i];
+		}
+		tempAngle /= 7;
+		tArc			+= nextSeg.arc;
+		turnLength++;
+		avgNextAngle += tempAngle;
+		if (minNextAngle > tempAngle) minNextAngle = tempAngle;
+		if (maxNextAngle < tempAngle) maxNextAngle = tempAngle;
+		nextSeg = *(nextSeg.next);
+		furtherSeg = *(furtherSeg.next);
+	}
+	avgNextAngle /= turnLength;
+	avgNextAngle = tAngle - avgNextAngle;
+	minNextAngle = tAngle - minNextAngle;
+	maxNextAngle = tAngle - maxNextAngle;
+
+	//printf("SEG = %s ID = %d DIST = %.2f AVG = %.2f MIN = %.2f MAX = %.2f\n", segName, id, distance, avgNextAngle, minNextAngle, maxNextAngle);
+	printf("ANGL = %.2f\tARC = %.2f\tAVG = %.2f\tMIN = %.2f\tMAX = %.2f\n", tAngle, tArc, avgNextAngle, minNextAngle, maxNextAngle);
+	//printf("TANGLE = %.2f	TRACKANGLE = %.2f	DIFF = %.2f\n", tAngle, trackAngle, tAngle - trackAngle);
 }
 
 
@@ -715,12 +744,12 @@ bool Driver::isStuck()
 	if (fabs(mycardata->getCarAngle()) > MAX_UNSTUCK_ANGLE &&
 		car->_speed_x < MAX_UNSTUCK_SPEED &&
 		fabs(car->_trkPos.toMiddle) > MIN_UNSTUCK_DIST) {
-		if (stuck > MAX_UNSTUCK_COUNT && car->_trkPos.toMiddle*mycardata->getCarAngle() < 0.0) {
-			return true;
-		} else {
-			stuck++;
-			return false;
-		}
+			if (stuck > MAX_UNSTUCK_COUNT && car->_trkPos.toMiddle*mycardata->getCarAngle() < 0.0) {
+				return true;
+			} else {
+				stuck++;
+				return false;
+			}
 	} else {
 		stuck = 0;
 		return false;
@@ -737,7 +766,7 @@ void Driver::initCa()
 	float wingca = 1.23f*rearwingarea*sin(rearwingangle);
 
 	float cl = GfParmGetNum(car->_carHandle, SECT_AERODYNAMICS, PRM_FCL, (char*) NULL, 0.0f) +
-			   GfParmGetNum(car->_carHandle, SECT_AERODYNAMICS, PRM_RCL, (char*) NULL, 0.0f);
+		GfParmGetNum(car->_carHandle, SECT_AERODYNAMICS, PRM_RCL, (char*) NULL, 0.0f);
 	float h = 0.0f;
 	int i;
 	for (i = 0; i < 4; i++)
@@ -821,7 +850,7 @@ float Driver::filterBPit(float brake)
 					return 1.0f;
 				} else if (s > pit->getNPitLoc()) {
 					// Stop in the pit.
-			 		return 1.0f;
+					return 1.0f;
 				}
 			}
 		} else {
@@ -900,7 +929,7 @@ float Driver::filterSColl(float steer)
 				if (fabs(myoffset) > w) {
 					myoffset = (myoffset > 0.0f) ? w : -w;
 				}
-				
+
 				// On straights the car near to the middle can correct more, in turns the car inside
 				// the turn does (because if you leave the track on the turn "inside" you will skid
 				// back to the track.
@@ -982,7 +1011,7 @@ void Driver::initTCLfilter()
 float Driver::filterTCL_RWD()
 {
 	return (car->_wheelSpinVel(REAR_RGT) + car->_wheelSpinVel(REAR_LFT)) *
-			car->_wheelRadius(REAR_LFT) / 2.0f;
+		car->_wheelRadius(REAR_LFT) / 2.0f;
 }
 
 
@@ -990,7 +1019,7 @@ float Driver::filterTCL_RWD()
 float Driver::filterTCL_FWD()
 {
 	return (car->_wheelSpinVel(FRNT_RGT) + car->_wheelSpinVel(FRNT_LFT)) *
-			car->_wheelRadius(FRNT_LFT) / 2.0f;
+		car->_wheelRadius(FRNT_LFT) / 2.0f;
 }
 
 
@@ -998,9 +1027,9 @@ float Driver::filterTCL_FWD()
 float Driver::filterTCL_4WD()
 {
 	return ((car->_wheelSpinVel(FRNT_RGT) + car->_wheelSpinVel(FRNT_LFT)) *
-			car->_wheelRadius(FRNT_LFT) +
-		   (car->_wheelSpinVel(REAR_RGT) + car->_wheelSpinVel(REAR_LFT)) *
-			car->_wheelRadius(REAR_LFT)) / 4.0f;
+		car->_wheelRadius(FRNT_LFT) +
+		(car->_wheelSpinVel(REAR_RGT) + car->_wheelSpinVel(REAR_LFT)) *
+		car->_wheelRadius(REAR_LFT)) / 4.0f;
 }
 
 
