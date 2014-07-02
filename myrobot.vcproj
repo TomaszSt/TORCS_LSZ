@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="myrobot"
 	ProjectGUID="{DFC8625A-30B9-430A-AB1C-349B0855F4DC}"
+	RootNamespace="myrobot"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -156,7 +157,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../export/include,../../windows/include,../../.."
+				AdditionalIncludeDirectories="../../../export/include;../../windows/include;../../.."
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;BT_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -188,7 +189,7 @@
 				OutputFile=".\Release/myrobot.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="../../../export/lib,../../windows/lib"
+				AdditionalLibraryDirectories="../../../export/lib;../../windows/lib"
 				GenerateManifest="false"
 				EnableUAC="false"
 				ModuleDefinitionFile=".\myrobot.def"
@@ -233,32 +234,6 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
-			<File
-				RelativePath="myrobot.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="myrobot.def"
-				>
-			</File>
 			<File
 				RelativePath="cardata.cpp"
 				>
@@ -324,6 +299,32 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="myrobot.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="myrobot.def"
+				>
 			</File>
 			<File
 				RelativePath="opponent.cpp"

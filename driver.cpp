@@ -655,9 +655,23 @@ void Driver::update(tSituation *s)
 	learn->update(s, track, car, alone, myoffset, car->_trkPos.seg->width/WIDTHDIV-BORDER_OVERTAKE_MARGIN, radius);
 
 	float trackAngle	= mycardata->getTrackangle();
+	NORM_PI_PI(trackAngle);
 	float speedTr		= mycardata->getSpeedInTrackDirection();
+	speedTr *= 360.0 / 100.0;
 	float carAngle		= mycardata->getCarAngle();
-	float toMiddle		= car->_trkPos.toMiddle/car->_trkPos.seg->width;
+	float toMiddle		= car->_trkPos.toMiddle; //[m]
+	float trackWidth	= car->_trkPos.seg->width;
+	float toRight		= 0.0;
+	float toLeft		= 0.0;
+	if (toMiddle < 0) {
+		toRight = trackWidth/2.0 - fabs(toMiddle);
+		toLeft = trackWidth/2.0 + fabs(toMiddle);
+	} else {
+		toLeft = trackWidth/2.0 - toMiddle;
+		toRight = trackWidth/2.0 + toMiddle;
+	}
+	float toMiddleP		= car->_trkPos.toMiddle/car->_trkPos.seg->width; //[%]
+	
 	float yaw			= car->_yaw;
 	float dist			= getDistToSegEnd();
 	int seg				= car->_trkPos.seg->type;
@@ -718,15 +732,23 @@ void Driver::update(tSituation *s)
 		furtherSeg = *(furtherSeg.next);
 	}
 	avgNextAngle /= turnLength;
-	avgNextAngle = tAngle - avgNextAngle;
+	avgNextAngle = fabs(tAngle - avgNextAngle);
 	minNextAngle = tAngle - minNextAngle;
 	maxNextAngle = tAngle - maxNextAngle;
+
+	float redLine = car->priv.enginerpmRedLine;
+	float rpm = car->priv.enginerpm;
+	int gear = car->priv.gear;
+
+	//toMiddle
 
 	//printf("SEG = %s ID = %d DIST = %.2f AVG = %.2f MIN = %.2f MAX = %.2f\n", segName, id, distance, avgNextAngle, minNextAngle, maxNextAngle);
 	//printf("ANGL = %.2f\tARC = %.2f\tAVG = %.2f\tMIN = %.2f\tMAX = %.2f\n", tAngle, tArc, avgNextAngle, minNextAngle, maxNextAngle);
 	//printf("TANGLE = %.2f	TRACKANGLE = %.2f	DIFF = %.2f\n", tAngle, trackAngle, tAngle - trackAngle);
 	// trying to find some relation between corner hardness and it's length and angle
-	printf("DIST = %.2f\tARC = %.2f\tAVG = %.2f\n", distance, tArc, avgNextAngle);
+	printf("DIST = %.2f\tARC = %.2f\tANG = %.2f\n", distance, tArc, avgNextAngle);
+	//printf("GEAR = %d RPM = %.2f RED = %.2f SPEED=%.2f\n", gear, rpm, redLine, speedTr);
+	//printf("WIDTH = %.2f\tTO_LEFT = %.2f\tTO_MIDDLE = %.2f\tTO_RIGHT = %.2f\n", trackWidth, toLeft, toMiddle, toRight);
 }
 
 
