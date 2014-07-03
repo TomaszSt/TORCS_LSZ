@@ -654,101 +654,66 @@ void Driver::update(tSituation *s)
 	alone = isAlone();
 	learn->update(s, track, car, alone, myoffset, car->_trkPos.seg->width/WIDTHDIV-BORDER_OVERTAKE_MARGIN, radius);
 
-	float trackAngle	= mycardata->getTrackangle();
-	NORM_PI_PI(trackAngle);
-	float speedTr		= mycardata->getSpeedInTrackDirection();
-	speedTr *= 360.0 / 100.0;
+	float speedP		= mycardata->getSpeedInTrackDirection();
+	float speed			= speedP * 360.0 / 100.0;
 	float carAngle		= mycardata->getCarAngle();
-	float toMiddle		= car->_trkPos.toMiddle; //[m]
 	float trackWidth	= car->_trkPos.seg->width;
-	float toRight		= 0.0;
-	float toLeft		= 0.0;
-	if (toMiddle < 0) {
-		toRight = trackWidth/2.0 - fabs(toMiddle);
-		toLeft = trackWidth/2.0 + fabs(toMiddle);
-	} else {
-		toLeft = trackWidth/2.0 - toMiddle;
-		toRight = trackWidth/2.0 + toMiddle;
-	}
-	float toMiddleP		= car->_trkPos.toMiddle/car->_trkPos.seg->width; //[%]
+	float toLeft		= car->_trkPos.toLeft;
+	float toMiddle		= car->_trkPos.toMiddle; //[m]
+	float toRight		= car->_trkPos.toRight;
+	float toMiddleP		= toMiddle/trackWidth * 100.0; //[%]
+	float toLeftP		= toLeft/trackWidth * 100.0; //[%]
+	float toRightP		= toRight/trackWidth * 100.0; //[%]
+	float turnAngle		= 0.0;
 	
-	float yaw			= car->_yaw;
-	float dist			= getDistToSegEnd();
-	int seg				= car->_trkPos.seg->type;
-	int id				= car->_trkPos.seg->id;
-	float tAngle		= car->_trkPos.seg->angle[0];
 	for (int i = 0 ; i < 7 ; i++) {
-		tAngle		+= car->_trkPos.seg->angle[i];
+		turnAngle		+= car->_trkPos.seg->angle[i];
 	}
-	tAngle /= 7;
-	float normalAngle = tAngle;
-	NORM_PI_PI(normalAngle);
-	float tArc			= 0.0;
-	char* segName;
-	switch (seg) {
-		case TR_LFT:
-			segName = "LEFT";
-			break;
-		case TR_STR:
-			segName = "STR";
-			break;
-		case TR_RGT:
-			segName = "RIGHT";
-			break;
-		default:
-			break;
-	}
-
-	float distance = 0.0;
+	turnAngle /= 7.0;
 	tTrackSeg tempSeg = *(car->_trkPos.seg);
 	tTrackSeg nextSeg = *(tempSeg.next);
+	float distanceToNextTurn = getDistToSegEnd();
 	while (tempSeg.type == nextSeg.type) {
-		distance += tempSeg.length;
-		tempSeg = *(tempSeg.next);
+		distanceToNextTurn += nextSeg.length;
 		nextSeg = *(nextSeg.next);
 	}
-	distance += tempSeg.length;
+	int currentSegType	= car->_trkPos.seg->type;
+	int nextSegType		= nextSeg.type;
 
-
-
-	float maxNextAngle = -999.0;
-	float minNextAngle = 999.0;
-	float avgNextAngle = 0.0;
-	int turnLength = 0;
-
-	tTrackSeg furtherSeg = *(nextSeg.next);
+	float avgNextTurnAngle	= 0.0;
+	float nextArc			= 0.0;
+	int nextTurnSegments	= 0;
+	float nextTurnLength	= 0.0;
+	tTrackSeg furtherSeg	= nextSeg;
 	while (nextSeg.type == furtherSeg.type) {
-		float tempAngle		= nextSeg.angle[0];
+		float tempTurnAngle	= 0.0;
 		for (int i = 0 ; i < 7 ; i++) {
-			tempAngle		+= nextSeg.angle[i];
+			tempTurnAngle	+= furtherSeg.angle[i];
 		}
-		tempAngle /= 7;
-		tArc			+= nextSeg.arc;
-		turnLength++;
-		avgNextAngle += tempAngle;
-		if (minNextAngle > tempAngle) minNextAngle = tempAngle;
-		if (maxNextAngle < tempAngle) maxNextAngle = tempAngle;
-		nextSeg = *(nextSeg.next);
-		furtherSeg = *(furtherSeg.next);
+		tempTurnAngle		/= 7.0;
+		avgNextTurnAngle	+= tempTurnAngle;
+		nextTurnLength		+= furtherSeg.length;
+		nextArc				+= furtherSeg.arc;
+		furtherSeg			= *(furtherSeg.next);
+		nextTurnSegments++;
 	}
-	avgNextAngle /= turnLength;
-	avgNextAngle = fabs(tAngle - avgNextAngle);
-	minNextAngle = tAngle - minNextAngle;
-	maxNextAngle = tAngle - maxNextAngle;
+	avgNextTurnAngle /= nextTurnSegments;
+	avgNextTurnAngle = fabs(turnAngle - avgNextTurnAngle);
 
-	float redLine = car->priv.enginerpmRedLine;
-	float rpm = car->priv.enginerpm;
-	int gear = car->priv.gear;
+	int gear		= car->priv.gear;
+	float rpm		= car->priv.enginerpm;
+	float redLine	= car->priv.enginerpmRedLine;
 
-	//toMiddle
+	//print GEARBOX info
+	//printf("GEAR = %d\tRPM = %.1f\tRED_LINE = %.1f\n", gear, rpm, redLine);
 
-	//printf("SEG = %s ID = %d DIST = %.2f AVG = %.2f MIN = %.2f MAX = %.2f\n", segName, id, distance, avgNextAngle, minNextAngle, maxNextAngle);
-	//printf("ANGL = %.2f\tARC = %.2f\tAVG = %.2f\tMIN = %.2f\tMAX = %.2f\n", tAngle, tArc, avgNextAngle, minNextAngle, maxNextAngle);
-	//printf("TANGLE = %.2f	TRACKANGLE = %.2f	DIFF = %.2f\n", tAngle, trackAngle, tAngle - trackAngle);
-	// trying to find some relation between corner hardness and it's length and angle
-	printf("DIST = %.2f\tARC = %.2f\tANG = %.2f\n", distance, tArc, avgNextAngle);
-	//printf("GEAR = %d RPM = %.2f RED = %.2f SPEED=%.2f\n", gear, rpm, redLine, speedTr);
-	//printf("WIDTH = %.2f\tTO_LEFT = %.2f\tTO_MIDDLE = %.2f\tTO_RIGHT = %.2f\n", trackWidth, toLeft, toMiddle, toRight);
+	//print next turn info
+	//printf("DST = %.1f\tARC = %.1f\tLEN = %.1f\tANG = %.1f\n", distanceToNextTurn, nextArc, nextTurnLength, avgNextTurnAngle);
+
+	//print car info
+	//printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speed, toLeft, toMiddle, toRight, carAngle);
+	// print car info percentage
+	printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
 }
 
 
