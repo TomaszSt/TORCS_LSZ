@@ -19,7 +19,6 @@
 
 #ifndef _DRIVER_H_
 #define _DRIVER_H_
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
@@ -38,6 +37,7 @@
 #include "learn.h"
 #include "strategy.h"
 #include "cardata.h"
+#include <string>
 
 #define BT_SECT_PRIV "bt private"
 #define BT_ATT_FUELPERLAP "fuelperlap"
@@ -125,6 +125,7 @@ class Driver {
 		static Cardata *cardata;		// Data about all cars shared by all instances.
 		SingleCardata *mycardata;		// Pointer to "global" data about my car.
 		static double currentsimtime;	// Store time to avoid useless updates.
+		std::string rules;
 
 		float currentspeedsqr;	// Square of the current speed_x.
 		float clutchtime;		// Clutch timer.
@@ -180,6 +181,25 @@ class Driver {
 
 		static const float TEAM_REAR_DIST;
 		static const int TEAM_DAMAGE_CHANGE_LEAD;
+		int model;
+		int rel;
+		int child;
+
+		int modelS;
+		int relS;
+		int childS;
+
+		float redLine;
+		float rpm;
+		float speedP;
+
+		float toMiddleP;
+		float carAngle;
+
+		bool useFclForBrakes;
+		bool useFclForAccel;
+		bool useFclForGear;
+		bool useFclForSteering;
 
 		// Track variables.
 		tTrack* track;

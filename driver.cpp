@@ -16,8 +16,17 @@ version              : $Id: driver.cpp,v 1.16.2.2 2008/12/31 03:53:53 berniw Exp
 *   (at your option) any later version.                                   *
 *                                                                         *
 ***************************************************************************/
-
+#include <string>
+#include <sstream>
+#include <iostream>
+#include "FFLLAPI.h"
+#include <fstream>
 #include "driver.h"
+
+
+//#define GEAR_SPEED 0
+#define GEAR_RPM 0
+//#define GEAR_DISTANCE_TO_NEXT 2
 
 const float Driver::MAX_UNSTUCK_ANGLE = 15.0f/180.0f*PI;	// [radians] If the angle of the car on the track is smaller, we assume we are not stuck.
 const float Driver::UNSTUCK_TIME_LIMIT = 2.0f;				// [s] We try to get unstuck after this time.
@@ -58,6 +67,7 @@ const int Driver::TEAM_DAMAGE_CHANGE_LEAD = 700;			// When to change position in
 Cardata *Driver::cardata = NULL;
 double Driver::currentsimtime;
 
+using namespace std;
 
 Driver::Driver(int index)
 {
@@ -118,12 +128,25 @@ void Driver::initTrack(tTrack* t, void *carHandle, void **carParmHandle, tSituat
 
 	// Load and set parameters.
 	MU_FACTOR = GfParmGetNum(*carParmHandle, BT_SECT_PRIV, BT_ATT_MUFACTOR, (char*)NULL, 0.69f);
+
+
+	//delete importer;
+	//delete engImported;
 }
 
 
 // Start a new race.
 void Driver::newRace(tCarElt* car, tSituation *s)
 {
+	/*ifstream ifs("D:\\rules.fcl");
+	string rules2( (std::istreambuf_iterator<char>(ifs) ),
+		(std::istreambuf_iterator<char>()    ) );
+	printf("%s\n--------------------------\n", rules2.c_str());
+	Engine * engine = fl::FllImporter().fromString(rules2.c_str());
+
+	printf("CREATED \n");*/
+	//printf("%s\n", engine->getName().c_str());
+	// ========================
 	float deltaTime = (float) RCM_MAX_DT_ROBOTS;
 	MAX_UNSTUCK_COUNT = int(UNSTUCK_TIME_LIMIT/deltaTime);
 	OVERTAKE_OFFSET_INC = OVERTAKE_OFFSET_SPEED*deltaTime;
@@ -164,6 +187,41 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	// create the pit object.
 	pit = new Pit(s, this);
+
+	model = ffll_new_model();
+	rel = ffll_load_fcl_file(model,"D:\\rules.fcl");
+	child = ffll_new_child(model);
+
+	modelS = ffll_new_model();
+	relS = ffll_load_fcl_file(modelS,"D:\\steering.fcl");
+	childS = ffll_new_child(modelS);
+
+	std::ifstream file("D:\\torcs_fcl.cfg");
+    std::string str; 
+    while (std::getline(file, str))
+    {
+		printf("read line ...");
+		std::size_t equalPos = str.find("=");
+		printf("found '=' on [%d]\n", equalPos);
+		std::string key = str.substr(0, equalPos);
+		printf("key: %s\n", key.c_str());
+		std::string value = str.substr(equalPos + 1);
+		printf("value: %s\n", value.c_str());
+		if (key.compare("brakes") == 0) {
+			if (value.compare("1") == 0) useFclForBrakes = true; else useFclForBrakes = false;
+		}
+		if (key.compare("accel") == 0) {
+			if (value.compare("1") == 0) useFclForAccel = true; else useFclForAccel = false;
+		}
+		if (key.compare("gear") == 0) {
+			if (value.compare("1") == 0) useFclForGear = true; else useFclForGear = false;
+		}
+		if (key.compare("steer") == 0) {
+			if (value.compare("1") == 0) useFclForSteering = true; else useFclForSteering = false;
+		}
+    }
+	
+
 }
 
 
@@ -211,6 +269,7 @@ int Driver::pitCommand(tSituation *s)
 // End of the current race.
 void Driver::endRace(tSituation *s)
 {
+	
 	// Nothing for now.
 }
 
@@ -358,36 +417,67 @@ float Driver::getBrake()
 // Compute gear.
 int Driver::getGear()
 {
-	if (car->_gear <= 0) {
-		return 1;
-	}
-	float gr_up = car->_gearRatio[car->_gear + car->_gearOffset];
-	float omega = car->_enginerpmRedLine/gr_up;
-	float wr = car->_wheelRadius(2);
-
-	if (omega*wr*SHIFT < car->_speed_x) {
-		return car->_gear + 1;
-	} else {
-		float gr_down = car->_gearRatio[car->_gear + car->_gearOffset - 1];
-		omega = car->_enginerpmRedLine/gr_down;
-		if (car->_gear > 1 && omega*wr*SHIFT > car->_speed_x + SHIFT_MARGIN) {
+	if (useFclForGear) {
+		double rpmP = rpm/redLine * 100;
+		int rpmPP = (int) rpmP;
+		ffll_set_value(model,child,GEAR_RPM,rpmPP);
+		ffll_set_value(model,child,1,fabs(speedP));
+		int output = (int)ffll_get_output_value(model, child);
+		printf("%d\t%d\t%.2f\n", output, rpmPP, fabs(speedP));
+		switch((int)output) {
+		case 0:
+			return car->_gear + 1;
+		case 1:
 			return car->_gear - 1;
+		case 2:
+			return car->_gear;
+		default:
+			return car->_gear;
 		}
+	} else {
+		if (car->_gear <= 0) {
+			return 1;
+		}
+		float gr_up = car->_gearRatio[car->_gear + car->_gearOffset];
+		float omega = car->_enginerpmRedLine/gr_up;
+		float wr = car->_wheelRadius(2);
+
+		if (omega*wr*SHIFT < car->_speed_x) {
+			return car->_gear + 1;
+		} else {
+			float gr_down = car->_gearRatio[car->_gear + car->_gearOffset - 1];
+			omega = car->_enginerpmRedLine/gr_down;
+			if (car->_gear > 1 && omega*wr*SHIFT > car->_speed_x + SHIFT_MARGIN) {
+				return car->_gear - 1;
+			}
+		}
+		return car->_gear;
 	}
-	return car->_gear;
 }
 
 
 // Compute steer value.
 float Driver::getSteer()
 {
-	float targetAngle;
-	vec2f target = getTargetPoint();
+	//if (useFclForSteering) {
+		ffll_set_value(modelS,childS,0,toMiddleP);
+		ffll_set_value(modelS,childS,1,carAngle);
+		double output = ffll_get_output_value(modelS, childS);
+		double outputF = output - 50.0;
+		outputF /= 100.0; 
+		//return outputF;
+	//} else {
 
-	targetAngle = atan2(target.y - car->_pos_Y, target.x - car->_pos_X);
-	targetAngle -= car->_yaw;
-	NORM_PI_PI(targetAngle);
-	return targetAngle / car->_steerLock;
+		float targetAngle;
+		vec2f target = getTargetPoint();
+
+		targetAngle = atan2(target.y - car->_pos_Y, target.x - car->_pos_X);
+		targetAngle -= car->_yaw;
+		NORM_PI_PI(targetAngle);
+		double toReturn = targetAngle / car->_steerLock;
+		printf("MID = %.1f\tANG = %.1f\tOUT = %.3f\tRET = %.3f\n", toMiddleP, carAngle, outputF, toReturn);
+		return toReturn;
+//	}
 }
 
 
@@ -654,18 +744,19 @@ void Driver::update(tSituation *s)
 	alone = isAlone();
 	learn->update(s, track, car, alone, myoffset, car->_trkPos.seg->width/WIDTHDIV-BORDER_OVERTAKE_MARGIN, radius);
 
-	float speedP		= mycardata->getSpeedInTrackDirection();
+	speedP		= mycardata->getSpeedInTrackDirection();
 	float speed			= speedP * 360.0 / 100.0;
-	float carAngle		= mycardata->getCarAngle();
+	carAngle		= mycardata->getCarAngle();
+	carAngle		= carAngle * 100.0 + 50.0;
 	float trackWidth	= car->_trkPos.seg->width;
 	float toLeft		= car->_trkPos.toLeft;
 	float toMiddle		= car->_trkPos.toMiddle; //[m]
 	float toRight		= car->_trkPos.toRight;
-	float toMiddleP		= toMiddle/trackWidth * 100.0; //[%]
+	toMiddleP			= fabs((toMiddle/trackWidth * 100.0 + 50.0) - 100.0); //[%]
 	float toLeftP		= toLeft/trackWidth * 100.0; //[%]
 	float toRightP		= toRight/trackWidth * 100.0; //[%]
 	float turnAngle		= 0.0;
-	
+
 	for (int i = 0 ; i < 7 ; i++) {
 		turnAngle		+= car->_trkPos.seg->angle[i];
 	}
@@ -701,8 +792,8 @@ void Driver::update(tSituation *s)
 	avgNextTurnAngle = fabs(turnAngle - avgNextTurnAngle);
 
 	int gear		= car->priv.gear;
-	float rpm		= car->priv.enginerpm;
-	float redLine	= car->priv.enginerpmRedLine;
+	rpm		= car->priv.enginerpm;
+	redLine	= car->priv.enginerpmRedLine;
 
 	//print GEARBOX info
 	//printf("GEAR = %d\tRPM = %.1f\tRED_LINE = %.1f\n", gear, rpm, redLine);
@@ -713,7 +804,15 @@ void Driver::update(tSituation *s)
 	//print car info
 	//printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speed, toLeft, toMiddle, toRight, carAngle);
 	// print car info percentage
-	printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
+	
+	//ffll_set_value(model,child,GEAR_SPEED,speed);
+	
+	//ffll_set_value(model,child,GEAR_DISTANCE_TO_NEXT,distanceToNextTurn);
+	
+	//printf("%.2f _ %d\n",output,rpmPP);
+	//cout<<output<< " " << rpmP << endl;
+//	printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
+	
 }
 
 
@@ -746,6 +845,11 @@ bool Driver::isStuck()
 		return false;
 	}
 }
+
+//void Driver::setRules(){
+//	FclImporter * import = new FclImporter();
+//	Engine * working= import->fromString("rules.fcl");
+//}
 
 
 // Compute aerodynamic downforce coefficient CA.
