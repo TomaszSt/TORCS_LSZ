@@ -423,16 +423,16 @@ float Driver::getBrake()
 	printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
 		speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
 	if (useFclForBrakes) {
-		ffll_set_value(modelA, childA, 0, speedP);
-		ffll_set_value(modelA, childA, 1, toMiddleP);
-		ffll_set_value(modelA, childA, 2, carAngle);
-		ffll_set_value(modelA, childA, 3, currentSegType);
-		ffll_set_value(modelA, childA, 4, nextSegType);
-		ffll_set_value(modelA, childA, 5, tempAvgNextTurnAngle);
-		ffll_set_value(modelA, childA, 6, tempNextArc);
-		ffll_set_value(modelA, childA, 7, tempNextTurnLength);
-		ffll_set_value(modelA, childA, 8, tempDistanceToNextTurn);
-		double output = ffll_get_output_value(modelA, childA);
+		ffll_set_value(modelB, childB, 0, speedP);
+		ffll_set_value(modelB, childB, 1, toMiddleP);
+		ffll_set_value(modelB, childB, 2, carAngle);
+		ffll_set_value(modelB, childB, 3, currentSegType);
+		ffll_set_value(modelB, childB, 4, nextSegType);
+		ffll_set_value(modelB, childB, 5, tempAvgNextTurnAngle);
+		ffll_set_value(modelB, childB, 6, tempNextArc);
+		ffll_set_value(modelB, childB, 7, tempNextTurnLength);
+		ffll_set_value(modelB, childB, 8, tempDistanceToNextTurn);
+		double output = ffll_get_output_value(modelB, childB);
 		double toReturn = output / 100.0;
 		return toReturn;
 	} else {
