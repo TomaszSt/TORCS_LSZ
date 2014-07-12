@@ -138,15 +138,6 @@ void Driver::initTrack(tTrack* t, void *carHandle, void **carParmHandle, tSituat
 // Start a new race.
 void Driver::newRace(tCarElt* car, tSituation *s)
 {
-	/*ifstream ifs("D:\\rules.fcl");
-	string rules2( (std::istreambuf_iterator<char>(ifs) ),
-		(std::istreambuf_iterator<char>()    ) );
-	printf("%s\n--------------------------\n", rules2.c_str());
-	Engine * engine = fl::FllImporter().fromString(rules2.c_str());
-
-	printf("CREATED \n");*/
-	//printf("%s\n", engine->getName().c_str());
-	// ========================
 	float deltaTime = (float) RCM_MAX_DT_ROBOTS;
 	MAX_UNSTUCK_COUNT = int(UNSTUCK_TIME_LIMIT/deltaTime);
 	OVERTAKE_OFFSET_INC = OVERTAKE_OFFSET_SPEED*deltaTime;
@@ -189,9 +180,9 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	pit = new Pit(s, this);
 
 	std::ifstream file("D:\\torcs_fcl.cfg");
-    std::string str; 
-    while (std::getline(file, str))
-    {
+	std::string str; 
+	while (std::getline(file, str))
+	{
 		printf("read line ...");
 		std::size_t equalPos = str.find("=");
 		printf("found '=' on [%d]\n", equalPos);
@@ -211,27 +202,39 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 		if (key.compare("steer") == 0) {
 			if (value.compare("1") == 0) useFclForSteering = true; else useFclForSteering = false;
 		}
-    }
+	}
 
 	if (useFclForBrakes) {
 		model = ffll_new_model();
 		rel = ffll_load_fcl_file(model, "D:\\rules.fcl");
+		if (rel < 0) {
+			printf("Error Opening rules.fcl\n");
+		}
 		child = ffll_new_child(model);
 	}
 	if (useFclForSteering) {
 		modelS = ffll_new_model();
 		relS = ffll_load_fcl_file(modelS, "D:\\steering.fcl");
+		if (relS < 0) {
+			printf("Error Opening steering.fcl\n");
+		}
 		childS = ffll_new_child(modelS);
 	}
 
 	if (useFclForAccel) {
 		modelA = ffll_new_model();
 		relA = ffll_load_fcl_file(modelA, "D:\\accel.fcl");
+		if (relA < 0) {
+			printf("Error Opening accel.fcl\n");
+		}
 		childA = ffll_new_child(modelA);
 	}
 	if (useFclForBrakes) {
 		modelB = ffll_new_model();
 		relB = ffll_load_fcl_file(modelB, "D:\\brakes.fcl");
+		if (relB < 0) {
+			printf("Error Opening brakes.fcl\n");
+		}
 		childB = ffll_new_child(modelB);
 	}
 
@@ -282,7 +285,7 @@ int Driver::pitCommand(tSituation *s)
 // End of the current race.
 void Driver::endRace(tSituation *s)
 {
-	
+
 	// Nothing for now.
 }
 
@@ -364,13 +367,13 @@ float Driver::getDistToSegEnd()
 // Compute fitting acceleration.
 float Driver::getAccel()
 {
-	float tempAvgNextTurnAngle = avgNextTurnAngle * 30.0;
-	float tempNextArc = nextArc * 30.0;
-	float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
-	float tempNextTurnLength = nextTurnLength / 5.0;
-	printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
-		speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
 	if (useFclForAccel) {
+		float tempAvgNextTurnAngle = avgNextTurnAngle * 30.0;
+		float tempNextArc = nextArc * 30.0;
+		float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
+		float tempNextTurnLength = nextTurnLength / 5.0;
+		//printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
+		//speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
 		ffll_set_value(modelA, childA, 0, speedP);
 		ffll_set_value(modelA, childA, 1, toMiddleP);
 		ffll_set_value(modelA, childA, 2, carAngle);
@@ -382,21 +385,23 @@ float Driver::getAccel()
 		ffll_set_value(modelA, childA, 8, tempDistanceToNextTurn);
 		double output = ffll_get_output_value(modelA, childA);
 		double toReturn = output / 100.0;
-		return toReturn;
-	} else {
-		if (car->_gear > 0) {
-			float allowedspeed = getAllowedSpeed(car->_trkPos.seg);
-			if (allowedspeed > car->_speed_x + FULL_ACCEL_MARGIN) {
-				return 1.0;
-			} else {
-				float gr = car->_gearRatio[car->_gear + car->_gearOffset];
-				float rm = car->_enginerpmRedLine;
-				return allowedspeed/car->_wheelRadius(REAR_RGT)*gr /rm;
-			}
-		} else {
-			return 1.0;
-		}
+		//printf("SPEED = %.2f\tOUT = %.2f\n", speedP, toReturn);
+		//return toReturn;
 	}
+	//} else {
+	if (car->_gear > 0) {
+		float allowedspeed = getAllowedSpeed(car->_trkPos.seg);
+		if (allowedspeed > car->_speed_x + FULL_ACCEL_MARGIN) {
+			return 1.0;
+		} else {
+			float gr = car->_gearRatio[car->_gear + car->_gearOffset];
+			float rm = car->_enginerpmRedLine;
+			return allowedspeed/car->_wheelRadius(REAR_RGT)*gr /rm;
+		}
+	} else {
+		return 1.0;
+	}
+	//}
 }
 
 
@@ -416,56 +421,59 @@ float Driver::filterOverlap(float accel)
 // Compute initial brake value.
 float Driver::getBrake()
 {
-	float tempAvgNextTurnAngle = avgNextTurnAngle * 30.0;
-	float tempNextArc = nextArc * 30.0;
-	float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
-	float tempNextTurnLength = nextTurnLength / 5.0;
-	printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
-		speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
 	if (useFclForBrakes) {
-		ffll_set_value(modelB, childB, 0, speedP);
-		ffll_set_value(modelB, childB, 1, toMiddleP);
-		ffll_set_value(modelB, childB, 2, carAngle);
-		ffll_set_value(modelB, childB, 3, currentSegType);
-		ffll_set_value(modelB, childB, 4, nextSegType);
-		ffll_set_value(modelB, childB, 5, tempAvgNextTurnAngle);
-		ffll_set_value(modelB, childB, 6, tempNextArc);
-		ffll_set_value(modelB, childB, 7, tempNextTurnLength);
-		ffll_set_value(modelB, childB, 8, tempDistanceToNextTurn);
+		float tempAvgNextTurnAngle = avgNextTurnAngle * 30.0;
+		float tempNextArc = nextArc * 30.0;
+		float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
+		float tempNextTurnLength = nextTurnLength / 5.0;
+		//printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
+		//speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
+		int speedInt = fabs(speedP);
+		ffll_set_value(modelB, childB, 0, speedInt);
+		//ffll_set_value(modelB, childB, 1, toMiddleP);
+		//ffll_set_value(modelB, childB, 2, carAngle);
+		//ffll_set_value(modelB, childB, 3, currentSegType);
+		//ffll_set_value(modelB, childB, 4, nextSegType);
+		//ffll_set_value(modelB, childB, 5, tempAvgNextTurnAngle);
+		//ffll_set_value(modelB, childB, 6, tempNextArc);
+		//ffll_set_value(modelB, childB, 7, tempNextTurnLength);
+		//ffll_set_value(modelB, childB, 8, tempDistanceToNextTurn);
 		double output = ffll_get_output_value(modelB, childB);
 		double toReturn = output / 100.0;
-		return toReturn;
-	} else {
-		// Car drives backward?
-		if (car->_speed_x < -MAX_UNSTUCK_SPEED) {
-			// Yes, brake.
-			return 1.0;
-		} else {
-			// We drive forward, normal braking.
-			tTrackSeg *segptr = car->_trkPos.seg;
-			float mu = segptr->surface->kFriction;
-			float maxlookaheaddist = currentspeedsqr/(2.0f*mu*G);
-			float lookaheaddist = getDistToSegEnd();
-
-			float allowedspeed = getAllowedSpeed(segptr);
-			if (allowedspeed < car->_speed_x) {
-				return MIN(1.0f, (car->_speed_x-allowedspeed)/(FULL_ACCEL_MARGIN));
-			}
-
-			segptr = segptr->next;
-			while (lookaheaddist < maxlookaheaddist) {
-				allowedspeed = getAllowedSpeed(segptr);
-				if (allowedspeed < car->_speed_x) {
-					if (brakedist(allowedspeed, mu) > lookaheaddist) {
-						return 1.0f;
-					}
-				}
-				lookaheaddist += segptr->length;
-				segptr = segptr->next;
-			}
-			return 0.0f;
-		}
+		printf("SPEED = %d\tOUT = %.2f\n", speedInt, toReturn);
+		//return toReturn;
 	}
+	//} else {
+	// Car drives backward?
+	if (car->_speed_x < -MAX_UNSTUCK_SPEED) {
+		// Yes, brake.
+		return 1.0;
+	} else {
+		// We drive forward, normal braking.
+		tTrackSeg *segptr = car->_trkPos.seg;
+		float mu = segptr->surface->kFriction;
+		float maxlookaheaddist = currentspeedsqr/(2.0f*mu*G);
+		float lookaheaddist = getDistToSegEnd();
+
+		float allowedspeed = getAllowedSpeed(segptr);
+		if (allowedspeed < car->_speed_x) {
+			return MIN(1.0f, (car->_speed_x-allowedspeed)/(FULL_ACCEL_MARGIN));
+		}
+
+		segptr = segptr->next;
+		while (lookaheaddist < maxlookaheaddist) {
+			allowedspeed = getAllowedSpeed(segptr);
+			if (allowedspeed < car->_speed_x) {
+				if (brakedist(allowedspeed, mu) > lookaheaddist) {
+					return 1.0f;
+				}
+			}
+			lookaheaddist += segptr->length;
+			segptr = segptr->next;
+		}
+		return 0.0f;
+	}
+	//}
 }
 
 
@@ -859,15 +867,7 @@ void Driver::update(tSituation *s)
 	//print car info
 	//printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speed, toLeft, toMiddle, toRight, carAngle);
 	// print car info percentage
-	
-	//ffll_set_value(model,child,GEAR_SPEED,speed);
-	
-	//ffll_set_value(model,child,GEAR_DISTANCE_TO_NEXT,distanceToNextTurn);
-	
-	//printf("%.2f _ %d\n",output,rpmPP);
-	//cout<<output<< " " << rpmP << endl;
-//	printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
-	
+	//	printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
 }
 
 
