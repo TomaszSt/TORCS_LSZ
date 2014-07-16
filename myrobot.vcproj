@@ -50,7 +50,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../export/include,../../windows/include,../../.."
+				AdditionalIncludeDirectories="D:\code\src;C:\qt48\include;D:\code\include;../../../export/include;D:\ffll;../../windows/include;../../.."
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;BT_EXPORTS;DEBUG;DEBUG_OUT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -78,11 +78,11 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="tgf.lib robottools.lib sg_vs2008_32.lib ul_vs2008_32.lib"
+				AdditionalDependencies="QAxContainer.lib QAxServer.lib QtCore4.lib qtmain.lib jfuzzyqt.lib tgf.lib robottools.lib sg_vs2008_32.lib ul_vs2008_32.lib ffllapi.lib"
 				OutputFile=".\Debug/myrobot.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="../../../export/libd,../../windows/lib"
+				AdditionalLibraryDirectories="&quot;C:\qt48\lib&quot;;&quot;D:\code\build&quot;;&quot;D:\torcs-1.3.5-release\torcs-1.3.5\export\lib&quot;;D:\ffll;../../../export/libd;../../windows/lib"
 				GenerateManifest="false"
 				EnableUAC="false"
 				IgnoreDefaultLibraryNames="LIBCMT"
@@ -118,7 +118,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(TargetDir)*.dll $(SolutionDir)runtimed\drivers\myrobot"
+				CommandLine="copy $(TargetDir)*.dll D:\torcs-1.3.5-release\torcs-1.3.5\runtime\drivers\myrobot"
 			/>
 		</Configuration>
 		<Configuration

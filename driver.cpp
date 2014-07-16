@@ -19,6 +19,9 @@ version              : $Id: driver.cpp,v 1.16.2.2 2008/12/31 03:53:53 berniw Exp
 #include <string>
 #include <sstream>
 #include <iostream>
+#include<stdio.h>
+#include <jfuzzyqt.h>
+#include <iostream>
 #include "FFLLAPI.h"
 #include <fstream>
 #include "driver.h"
@@ -68,6 +71,7 @@ Cardata *Driver::cardata = NULL;
 double Driver::currentsimtime;
 
 using namespace std;
+using namespace jfuzzyqt;
 
 Driver::Driver(int index)
 {
@@ -179,7 +183,61 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	// create the pit object.
 	pit = new Pit(s, this);
 
-	std::ifstream file("D:\\torcs_fcl.cfg");
+	JFuzzyQt Model;
+	Model.load("brackets.fcl");
+	Model.setVariable("service",9);
+	Model.setVariable("food",2);
+	Model.setVariable("tip",15);
+	//Model.evaluate();
+	QStringList funct_blocks = Model.functBlocks();
+        int funct_block = 0;
+        if(funct_blocks.size() > 1)
+        {
+            std::cout << "Detected function blocks:" << std::endl;
+            for(int i = 0; i < funct_blocks.size(); i++)
+            {
+                std::cout << " " << (i+1) << ". " << funct_blocks.at(i).toLocal8Bit().data() << std::endl;
+            }
+            while((funct_block < 1) || (funct_block > funct_blocks.size()))
+            {
+                std::cout << "Select number of funct block [1.." << funct_blocks.size() << "] : ";
+                std::cin >> funct_block;
+            }
+            funct_block--;
+        }
+        QStringList inputs = Model.inputs(funct_blocks.at(funct_block));
+        QStringList outputs = Model.outputs(funct_blocks.at(funct_block));
+        if(inputs.size() == 2 && outputs.size() == 1)
+        {
+            std::cout << " Declarations : " << std::endl;
+            std::cout << " input1 = " << inputs.at(0).toLocal8Bit().data() << std::endl;
+            std::cout << " input2 = " << inputs.at(1).toLocal8Bit().data() << std::endl;
+            std::cout << " output = " << outputs.at(0).toLocal8Bit().data() << std::endl;
+            int input1, input2; // values for input variables
+            std::cout << "------------------------------------------------------------------" << std::endl;
+            std::cout << "                               output                             " << std::endl;
+            std::cout << "------------------------------------------------------------------" << std::endl;
+            std::cout << "      |                        input2                             " << std::endl;
+            std::cout << "input1|-----------------------------------------------------------" << std::endl;
+            std::cout << "      | 0.0 | 1.0 | 2.0 | 3.0 | 4.0 | 5.0 | 6.0 | 7.0 | 8.0 | 9.0 " << std::endl;
+            std::cout << "------------------------------------------------------------------" << std::endl;
+		for(input1 = 0; input1 < 10; input1++)
+            {
+                QString line;
+                line.append(QString("%1").arg(double(input1),5,'f',2));
+                line.append(" |");
+                for(input2 = 0; input2 < 10; input2++)
+                {
+                    Model.setVariable(inputs.at(0), input1, funct_blocks.at(funct_block));
+                    Model.setVariable(inputs.at(1), input2, funct_blocks.at(funct_block));
+                    Model.evaluate(funct_blocks.at(funct_block));
+                    line.append(QString("%1").arg(Model.getValue(outputs.at(0), funct_blocks.at(funct_block)),5,'f', 2));
+                    if(input2 < 9) line.append("|");
+                }
+                std::cout << line.toLocal8Bit().data() << std::endl;
+            }
+		}
+		std::ifstream file("D:\\torcs_fcl.cfg");
 	std::string str; 
 	while (std::getline(file, str))
 	{
