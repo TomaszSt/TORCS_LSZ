@@ -230,7 +230,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	if (useFclForSteering) {
 		printf("Trying STEER\n");
-		if (SteerModel.load("D:\\rules.fcl"))
+		if (SteerModel.load("D:\\steer.fcl"))
 		{
 			printf("Loaded STEER\n");
 			funct_blocks_steer = SteerModel.functBlocks();
@@ -241,7 +241,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	if (useFclForAccel) {
 		printf("Trying ACCEL\n");
-		if (AccelModel.load("D:\\rules.fcl"))
+		if (AccelModel.load("D:\\accel.fcl"))
 		{
 			printf("Loaded ACCEL\n");
 			funct_blocks_accel = AccelModel.functBlocks();
@@ -251,7 +251,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	}
 	if (useFclForBrakes) {
 		printf("Trying BRAKES\n");
-		if (BrakesModel.load("D:\\rules.fcl"))
+		if (BrakesModel.load("D:\\brakes.fcl"))
 		{
 			printf("Loaded BRAKES\n");
 			funct_blocks_brakes = BrakesModel.functBlocks();
@@ -406,22 +406,36 @@ float Driver::getAccel()
 		float tempNextArc = nextArc * 30.0;
 		float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
 		float tempNextTurnLength = nextTurnLength / 5.0;
-		//printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
-		//speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
+		printf("SPD = %d MDL = %.0f, CANG = %.0f NANG = %.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
+			speedD, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
+		//printf("SPD = %.2f\n", toMiddleP);
+		AccelModel.setVariable(inputs_accel.at(0), speedD , funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(1),  toMiddleP, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(2),  carAngle, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(3),  currentSegType, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(4),  nextSegType, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(5),  tempAvgNextTurnAngle, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(6),  tempNextArc, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(7),  tempNextTurnLength, funct_blocks_accel.at(0));
+		AccelModel.setVariable(inputs_accel.at(8),  tempDistanceToNextTurn, funct_blocks_accel.at(0));
+		AccelModel.evaluate(funct_blocks_accel.at(0));
+		int output = (int) AccelModel.getValue(outputs_accel.at(0));
 		//printf("SPEED = %.2f\tOUT = %.2f\n", speedP, toReturn);
 		//return toReturn;
-	}
-	if (car->_gear > 0) {
-		float allowedspeed = getAllowedSpeed(car->_trkPos.seg);
-		if (allowedspeed > car->_speed_x + FULL_ACCEL_MARGIN) {
-			return 1.0;
-		} else {
-			float gr = car->_gearRatio[car->_gear + car->_gearOffset];
-			float rm = car->_enginerpmRedLine;
-			return allowedspeed/car->_wheelRadius(REAR_RGT)*gr /rm;
-		}
+		return 0;
 	} else {
-		return 1.0;
+		if (car->_gear > 0) {
+			float allowedspeed = getAllowedSpeed(car->_trkPos.seg);
+			if (allowedspeed > car->_speed_x + FULL_ACCEL_MARGIN) {
+				return 1.0;
+			} else {
+				float gr = car->_gearRatio[car->_gear + car->_gearOffset];
+				float rm = car->_enginerpmRedLine;
+				return allowedspeed/car->_wheelRadius(REAR_RGT)*gr /rm;
+			}
+		} else {
+			return 1.0;
+		}
 	}
 }
 
@@ -492,8 +506,7 @@ int Driver::getGear()
 	if (useFclForGear) {
 		double rpmP = rpm/redLine * 100;
 		int rpmPP = (int) rpmP;
-		speedP = fabs(speedP);
-		int speedD = (int)speedP;
+
 		printf("RPM = %d\tSPD = %d\n", rpmPP, speedD);
 		GearModel.setVariable(inputs_gear.at(0), rpmPP , funct_blocks_gear.at(0));
 		GearModel.setVariable(inputs_gear.at(1),  speedD, funct_blocks_gear.at(0));
@@ -817,6 +830,8 @@ void Driver::update(tSituation *s)
 
 	speedP				= mycardata->getSpeedInTrackDirection();
 	float speed			= speedP * 360.0 / 100.0;
+	speedP = fabs(speedP);
+	speedD = (int)speedP;
 	carAngle			= mycardata->getCarAngle();
 	carAngle			= carAngle * 100.0 + 50.0;
 	float trackWidth	= car->_trkPos.seg->width;
@@ -875,7 +890,7 @@ void Driver::update(tSituation *s)
 	//print car info
 	//printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speed, toLeft, toMiddle, toRight, carAngle);
 	// print car info percentage
-	//	printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
+	//printf("SPD = %.1f\tLFT = %.1f\tMID = %.1f\tRGT = %.1f\tANG = %.1f\n", speedP, toLeftP, toMiddleP, toRightP, carAngle);
 }
 
 

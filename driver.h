@@ -185,6 +185,7 @@ class Driver {
 		float redLine;
 		float rpm;
 		float speedP;
+		int speedD;
 
 		float toMiddleP;
 		float carAngle;
