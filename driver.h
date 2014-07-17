@@ -182,22 +182,6 @@ class Driver {
 		static const float TEAM_REAR_DIST;
 		static const int TEAM_DAMAGE_CHANGE_LEAD;
 		
-		int model;
-		int rel;
-		int child;
-
-		int modelS;
-		int relS;
-		int childS;
-
-		int modelA;
-		int relA;
-		int childA;
-
-		int modelB;
-		int relB;
-		int childB;
-
 		float redLine;
 		float rpm;
 		float speedP;

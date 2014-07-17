@@ -22,7 +22,6 @@ version              : $Id: driver.cpp,v 1.16.2.2 2008/12/31 03:53:53 berniw Exp
 #include<stdio.h>
 #include <jfuzzyqt.h>
 #include <iostream>
-#include "FFLLAPI.h"
 #include <fstream>
 #include "driver.h"
 
@@ -73,10 +72,25 @@ double Driver::currentsimtime;
 using namespace std;
 using namespace jfuzzyqt;
 
-	JFuzzyQt GearModel;
-	QStringList funct_blocks_gear;
-	QStringList inputs_gear;
-	QStringList outputs_gear;
+JFuzzyQt GearModel;
+QStringList funct_blocks_gear;
+QStringList inputs_gear;
+QStringList outputs_gear;
+
+JFuzzyQt BrakesModel;
+QStringList funct_blocks_brakes;
+QStringList inputs_brakes;
+QStringList outputs_brakes;
+
+JFuzzyQt AccelModel;
+QStringList funct_blocks_accel;
+QStringList inputs_accel;
+QStringList outputs_accel;
+
+JFuzzyQt SteerModel;
+QStringList funct_blocks_steer;
+QStringList inputs_steer;
+QStringList outputs_steer;
 
 
 Driver::Driver(int index)
@@ -189,20 +203,74 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	// create the pit object.
 	pit = new Pit(s, this);
 
-	useFclForGear=true;
+	std::ifstream file("D:\\torcs_fcl.cfg");
+	std::string str; 
+	while (std::getline(file, str))
+	{
+		printf("read line ...");
+		std::size_t equalPos = str.find("=");
+		printf("found '=' on [%d]\n", equalPos);
+		std::string key = str.substr(0, equalPos);
+		printf("key: %s\n", key.c_str());
+		std::string value = str.substr(equalPos + 1);
+		printf("value: %s\n", value.c_str());
+		if (key.compare("brakes") == 0) {
+			if (value.compare("1") == 0) useFclForBrakes = true; else useFclForBrakes = false;
+		}
+		if (key.compare("accel") == 0) {
+			if (value.compare("1") == 0) useFclForAccel = true; else useFclForAccel = false;
+		}
+		if (key.compare("gear") == 0) {
+			if (value.compare("1") == 0) useFclForGear = true; else useFclForGear = false;
+		}
+		if (key.compare("steer") == 0) {
+			if (value.compare("1") == 0) useFclForSteering = true; else useFclForSteering = false;
+		}
+	}
+
+	if (useFclForSteering) {
+		printf("Trying STEER\n");
+		if (SteerModel.load("D:\\rules.fcl"))
+		{
+			printf("Loaded STEER\n");
+			funct_blocks_steer = SteerModel.functBlocks();
+			inputs_steer = SteerModel.inputs(funct_blocks_steer.at(0));
+			outputs_steer = SteerModel.outputs(funct_blocks_steer.at(0));
+		}
+	}
+
+	if (useFclForAccel) {
+		printf("Trying ACCEL\n");
+		if (AccelModel.load("D:\\rules.fcl"))
+		{
+			printf("Loaded ACCEL\n");
+			funct_blocks_accel = AccelModel.functBlocks();
+			inputs_accel = AccelModel.inputs(funct_blocks_accel.at(0));
+			outputs_accel = AccelModel.outputs(funct_blocks_accel.at(0));
+		}
+	}
+	if (useFclForBrakes) {
+		printf("Trying BRAKES\n");
+		if (BrakesModel.load("D:\\rules.fcl"))
+		{
+			printf("Loaded BRAKES\n");
+			funct_blocks_brakes = BrakesModel.functBlocks();
+			inputs_brakes = BrakesModel.inputs(funct_blocks_brakes.at(0));
+			outputs_brakes = BrakesModel.outputs(funct_blocks_brakes.at(0));
+		}
+	}
 
 	if (useFclForGear) {
-		printf("Trying\n");
+		printf("Trying GEAR\n");
 		if (GearModel.load("D:\\rules.fcl"))
 		{
-			printf("Loaded\n");
-		
-		funct_blocks_gear = GearModel.functBlocks();
-		inputs_gear = GearModel.inputs(funct_blocks_gear.at(0));
-		outputs_gear = GearModel.outputs(funct_blocks_gear.at(0));
+			printf("Loaded GEAR\n");
+			funct_blocks_gear = GearModel.functBlocks();
+			inputs_gear = GearModel.inputs(funct_blocks_gear.at(0));
+			outputs_gear = GearModel.outputs(funct_blocks_gear.at(0));
 		}
-		}
-		
+	}
+
 
 }
 
@@ -340,21 +408,9 @@ float Driver::getAccel()
 		float tempNextTurnLength = nextTurnLength / 5.0;
 		//printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
 		//speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
-		ffll_set_value(modelA, childA, 0, speedP);
-		ffll_set_value(modelA, childA, 1, toMiddleP);
-		ffll_set_value(modelA, childA, 2, carAngle);
-		ffll_set_value(modelA, childA, 3, currentSegType);
-		ffll_set_value(modelA, childA, 4, nextSegType);
-		ffll_set_value(modelA, childA, 5, tempAvgNextTurnAngle);
-		ffll_set_value(modelA, childA, 6, tempNextArc);
-		ffll_set_value(modelA, childA, 7, tempNextTurnLength);
-		ffll_set_value(modelA, childA, 8, tempDistanceToNextTurn);
-		double output = ffll_get_output_value(modelA, childA);
-		double toReturn = output / 100.0;
 		//printf("SPEED = %.2f\tOUT = %.2f\n", speedP, toReturn);
 		//return toReturn;
 	}
-	//} else {
 	if (car->_gear > 0) {
 		float allowedspeed = getAllowedSpeed(car->_trkPos.seg);
 		if (allowedspeed > car->_speed_x + FULL_ACCEL_MARGIN) {
@@ -367,7 +423,6 @@ float Driver::getAccel()
 	} else {
 		return 1.0;
 	}
-	//}
 }
 
 
@@ -394,20 +449,8 @@ float Driver::getBrake()
 		float tempNextTurnLength = nextTurnLength / 5.0;
 		//printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
 		//speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
-		int speedInt = fabs(speedP);
-		ffll_set_value(modelB, childB, 0, speedInt);
-		//ffll_set_value(modelB, childB, 1, toMiddleP);
-		//ffll_set_value(modelB, childB, 2, carAngle);
-		//ffll_set_value(modelB, childB, 3, currentSegType);
-		//ffll_set_value(modelB, childB, 4, nextSegType);
-		//ffll_set_value(modelB, childB, 5, tempAvgNextTurnAngle);
-		//ffll_set_value(modelB, childB, 6, tempNextArc);
-		//ffll_set_value(modelB, childB, 7, tempNextTurnLength);
-		//ffll_set_value(modelB, childB, 8, tempDistanceToNextTurn);
-		double output = ffll_get_output_value(modelB, childB);
-		double toReturn = output / 100.0;
-		printf("SPEED = %d\tOUT = %.2f\n", speedInt, toReturn);
-		//return toReturn;
+
+
 	}
 	//} else {
 	// Car drives backward?
@@ -449,11 +492,14 @@ int Driver::getGear()
 	if (useFclForGear) {
 		double rpmP = rpm/redLine * 100;
 		int rpmPP = (int) rpmP;
+		speedP = fabs(speedP);
+		int speedD = (int)speedP;
+		printf("RPM = %d\tSPD = %d\n", rpmPP, speedD);
 		GearModel.setVariable(inputs_gear.at(0), rpmPP , funct_blocks_gear.at(0));
-		GearModel.setVariable(inputs_gear.at(1), speedP , funct_blocks_gear.at(0));
+		GearModel.setVariable(inputs_gear.at(1),  speedD, funct_blocks_gear.at(0));
 		GearModel.evaluate(funct_blocks_gear.at(0));
 		int output = (int) GearModel.getValue(outputs_gear.at(0));
-		//cout<<GearModel.getValue(outputs_gear.at(0))<<endl;
+		printf("%d\n",output);
 		switch((int)output) {
 		case 0:
 			return car->_gear + 1;
@@ -490,12 +536,7 @@ int Driver::getGear()
 float Driver::getSteer()
 {
 	if (useFclForSteering) {
-		ffll_set_value(modelS, childS, 0, toMiddleP);
-		ffll_set_value(modelS, childS, 1, carAngle);
-		double output = ffll_get_output_value(modelS, childS);
-		double outputF = output - 50.0;
-		outputF /= 100.0; 
-		return outputF;
+		return 0;
 	} else {
 
 		float targetAngle;
