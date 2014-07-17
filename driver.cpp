@@ -73,6 +73,12 @@ double Driver::currentsimtime;
 using namespace std;
 using namespace jfuzzyqt;
 
+	JFuzzyQt GearModel;
+	QStringList funct_blocks_gear;
+	QStringList inputs_gear;
+	QStringList outputs_gear;
+
+
 Driver::Driver(int index)
 {
 	INDEX = index;
@@ -141,7 +147,7 @@ void Driver::initTrack(tTrack* t, void *carHandle, void **carParmHandle, tSituat
 
 // Start a new race.
 void Driver::newRace(tCarElt* car, tSituation *s)
-{
+{ 
 	float deltaTime = (float) RCM_MAX_DT_ROBOTS;
 	MAX_UNSTUCK_COUNT = int(UNSTUCK_TIME_LIMIT/deltaTime);
 	OVERTAKE_OFFSET_INC = OVERTAKE_OFFSET_SPEED*deltaTime;
@@ -150,7 +156,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	clutchtime = 0.0f;
 	oldlookahead = 0.0f;
 	this->car = car;
-	CARMASS = GfParmGetNum(car->_carHandle, SECT_CAR, PRM_MASS, NULL, 1000.0f);
+	CARMASS = GfParmGetNum( car->_carHandle, SECT_CAR, PRM_MASS, NULL, 1000.0f);
 	myoffset = 0.0f;
 	initCa();
 	initCw();
@@ -183,84 +189,20 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	// create the pit object.
 	pit = new Pit(s, this);
 
-		JFuzzyQt Model;
-	Model.load("brackets.fcl");
+	useFclForGear=true;
 
-	QStringList funct_blocks = Model.functBlocks();
-	QStringList inputs = Model.inputs(funct_blocks.at(0));
-	QStringList outputs = Model.outputs(funct_blocks.at(0));
-	
-		cout<<funct_blocks.at(0).toLocal8Bit().data()<<endl;
-		cout << " var1 = " << inputs.at(0).toLocal8Bit().data()<<endl;
-		cout << " var2 = " << inputs.at(1).toLocal8Bit().data() << std::endl;
-		cout << " output = " << outputs.at(0).toLocal8Bit().data() << std::endl;
-
-	Model.setVariable(inputs.at(0), 2, funct_blocks.at(0));
-	Model.setVariable(inputs.at(1), 1, funct_blocks.at(0));
-	Model.evaluate(funct_blocks.at(0));
-
-		cout<< Model.getValue(outputs.at(0), funct_blocks.at(0)) << endl;
-		cout << " output = " << outputs.at(0).toLocal8Bit().data() << std::endl;
-
-
-	std::ifstream file("D:\\torcs_fcl.cfg");
-	std::string str; 
-	while (std::getline(file, str))
-	{
-		printf("read line ...");
-		std::size_t equalPos = str.find("=");
-		printf("found '=' on [%d]\n", equalPos);
-		std::string key = str.substr(0, equalPos);
-		printf("key: %s\n", key.c_str());
-		std::string value = str.substr(equalPos + 1);
-		printf("value: %s\n", value.c_str());
-		if (key.compare("brakes") == 0) {
-			if (value.compare("1") == 0) useFclForBrakes = true; else useFclForBrakes = false;
+	if (useFclForGear) {
+		printf("Trying\n");
+		if (GearModel.load("D:\\rules.fcl"))
+		{
+			printf("Loaded\n");
+		
+		funct_blocks_gear = GearModel.functBlocks();
+		inputs_gear = GearModel.inputs(funct_blocks_gear.at(0));
+		outputs_gear = GearModel.outputs(funct_blocks_gear.at(0));
 		}
-		if (key.compare("accel") == 0) {
-			if (value.compare("1") == 0) useFclForAccel = true; else useFclForAccel = false;
 		}
-		if (key.compare("gear") == 0) {
-			if (value.compare("1") == 0) useFclForGear = true; else useFclForGear = false;
-		}
-		if (key.compare("steer") == 0) {
-			if (value.compare("1") == 0) useFclForSteering = true; else useFclForSteering = false;
-		}
-	}
-
-	if (useFclForBrakes) {
-		model = ffll_new_model();
-		rel = ffll_load_fcl_file(model, "D:\\rules.fcl");
-		if (rel < 0) {
-			printf("Error Opening rules.fcl\n");
-		}
-		child = ffll_new_child(model);
-	}
-	if (useFclForSteering) {
-		modelS = ffll_new_model();
-		relS = ffll_load_fcl_file(modelS, "D:\\steering.fcl");
-		if (relS < 0) {
-			printf("Error Opening steering.fcl\n");
-		}
-		childS = ffll_new_child(modelS);
-	}
-
-	if (useFclForAccel) {
-		modelA = ffll_new_model();
-		relA = ffll_load_fcl_file(modelA, "D:\\accel.fcl");
-		if (relA < 0) {
-			printf("Error Opening accel.fcl\n");
-		}
-		childA = ffll_new_child(modelA);
-	}
-	if (useFclForBrakes) {
-		modelB = ffll_new_model();
-		relB = ffll_load_fcl_file(modelB, "D:\\brakes.fcl");
-		if (relB < 0) {
-			printf("Error Opening brakes.fcl\n");
-		}
-		childB = ffll_new_child(modelB);
-	}
+		
 
 }
 
@@ -507,10 +449,11 @@ int Driver::getGear()
 	if (useFclForGear) {
 		double rpmP = rpm/redLine * 100;
 		int rpmPP = (int) rpmP;
-		ffll_set_value(model,child,GEAR_RPM,rpmPP);
-		ffll_set_value(model,child,1,fabs(speedP));
-		int output = (int)ffll_get_output_value(model, child);
-		printf("%d\t%d\t%.2f\n", output, rpmPP, fabs(speedP));
+		GearModel.setVariable(inputs_gear.at(0), rpmPP , funct_blocks_gear.at(0));
+		GearModel.setVariable(inputs_gear.at(1), speedP , funct_blocks_gear.at(0));
+		GearModel.evaluate(funct_blocks_gear.at(0));
+		int output = (int) GearModel.getValue(outputs_gear.at(0));
+		//cout<<GearModel.getValue(outputs_gear.at(0))<<endl;
 		switch((int)output) {
 		case 0:
 			return car->_gear + 1;
