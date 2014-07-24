@@ -419,10 +419,10 @@ float Driver::getAccel()
 		AccelModel.setVariable(inputs_accel.at(7),  tempNextTurnLength, funct_blocks_accel.at(0));
 		AccelModel.setVariable(inputs_accel.at(8),  tempDistanceToNextTurn, funct_blocks_accel.at(0));
 		AccelModel.evaluate(funct_blocks_accel.at(0));
-		int output = (int) AccelModel.getValue(outputs_accel.at(0));
+		double output = AccelModel.getValue(outputs_accel.at(0));
 		//printf("SPEED = %.2f\tOUT = %.2f\n", speedP, toReturn);
-		//return toReturn;
-		return 0;
+		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		return output;
 	} else {
 		if (car->_gear > 0) {
 			float allowedspeed = getAllowedSpeed(car->_trkPos.seg);
@@ -461,9 +461,24 @@ float Driver::getBrake()
 		float tempNextArc = nextArc * 30.0;
 		float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
 		float tempNextTurnLength = nextTurnLength / 5.0;
-		//printf("SPD = %.0f MDL = %.0f CANG = %.0f NANG = %0.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
-		//speedP, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
-
+		printf("SPD = %d MDL = %.0f, CANG = %.0f NANG = %.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
+			speedD, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
+		//printf("SPD = %.2f\n", toMiddleP);
+		BrakesModel.setVariable(inputs_brakes.at(0),  speedD , funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(1),  toMiddleP, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(2),  carAngle, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(3),  currentSegType, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(4),  nextSegType, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(5),  tempAvgNextTurnAngle, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(6),  tempNextArc, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(7),  tempNextTurnLength, funct_blocks_brakes.at(0));
+		BrakesModel.setVariable(inputs_brakes.at(8),  tempDistanceToNextTurn, funct_blocks_brakes.at(0));
+		BrakesModel.evaluate(funct_blocks_brakes.at(0));
+		double output = BrakesModel.getValue(outputs_brakes.at(0));
+		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		//printf("SPEED = %.2f\tOUT = %.2f\n", speedP, toReturn);
+		//return toReturn;
+		return output;
 
 	}
 	//} else {
