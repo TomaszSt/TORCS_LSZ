@@ -564,6 +564,16 @@ int Driver::getGear()
 float Driver::getSteer()
 {
 	if (useFclForSteering) {
+		SteerModel.setVariable(inputs_steer.at(0),  toMiddleP, funct_blocks_steer.at(0));
+		SteerModel.setVariable(inputs_steer.at(1),  carAngle, funct_blocks_steer.at(0));
+		SteerModel.setVariable(inputs_steer.at(2),  currentSegType, funct_blocks_steer.at(0));
+		SteerModel.setVariable(inputs_steer.at(3),  nextSegType, funct_blocks_steer.at(0));
+		SteerModel.evaluate(funct_blocks_steer.at(0));
+		double output = SteerModel.getValue(outputs_steer.at(0));
+		//printf("SPEED = %.2f\tOUT = %.2f\n", speedP, toReturn);
+		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		return output;
+			//printf("MID = %.1f\tANG = %.1f\tOUT = %.3f\tRET = %.3f\n", toMiddleP, carAngle, outputF, toReturn);
 		return 0;
 	} else {
 
@@ -574,7 +584,6 @@ float Driver::getSteer()
 		targetAngle -= car->_yaw;
 		NORM_PI_PI(targetAngle);
 		double toReturn = targetAngle / car->_steerLock;
-		//printf("MID = %.1f\tANG = %.1f\tOUT = %.3f\tRET = %.3f\n", toMiddleP, carAngle, outputF, toReturn);
 		return toReturn;
 	}
 }
