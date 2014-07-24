@@ -1,0 +1,47 @@
+FUNCTION_BLOCK gear
+
+VAR_INPUT
+	rpm	 : REAL;
+	speed : REAL;
+END_VAR
+
+VAR_OUTPUT
+	gearchange : REAL;
+END_VAR
+
+FUZZIFY rpm
+	TERM low_r := (0, 1) (45, 1) (55, 0) ;
+	TERM medium_r := (55, 0) (70, 1) (90, 0) ;
+	TERM high_r := (90, 0) (97, 1) (100, 1) ;
+END_FUZZIFY
+
+FUZZIFY speed
+	TERM zero := (0, 1) (1, 0);
+	TERM low_s := (1, 0) (2, 1) (20, 1) (28, 0) ;
+	TERM high_s := (25, 0) (50, 1) (100, 1) ;
+END_FUZZIFY
+
+DEFUZZIFY gearchange
+	TERM up := 0;
+	TERM down := 1;
+	TERM keep := 2;
+	METHOD: COG;
+	DEFAULT := 0;
+END_DEFUZZIFY
+
+RULEBLOCK First
+	AND : MIN;    // [MIN|BDIF|PROD]
+    OR : MAX;     // [MAX|ASUM|BSUM]
+    ACT : MIN;    // [MIN|PROD]
+    ACCU : MAX;   // [MAX|BSUM|NSUM|PROBOR|SUM]
+	RULE 1: IF speed IS zero THEN gearchange IS up;
+	RULE 2: IF rpm IS high_r AND speed IS low_s THEN gearchange IS keep;
+	RULE 3: IF rpm IS high_r AND speed IS high_s THEN gearchange IS up;
+	RULE 4: IF rpm IS low_r AND speed IS low_s THEN gearchange IS keep;
+	RULE 5: IF rpm IS low_r AND speed IS high_s THEN gearchange IS down;
+	RULE 6: IF rpm IS medium_r AND speed IS low_s THEN gearchange IS keep;
+	RULE 7: IF rpm IS medium_r AND speed IS high_s THEN gearchange IS keep;
+
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK

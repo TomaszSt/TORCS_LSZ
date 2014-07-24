@@ -1,0 +1,99 @@
+FUNCTION_BLOCK gear
+
+VAR_INPUT
+	toMiddle	 : REAL;
+	carAngle : REAL;
+	currentSegment : REAL;
+	nextSegment : REAL;
+END_VAR
+
+VAR_OUTPUT
+	gearchange : REAL;
+END_VAR
+
+FUZZIFY toMiddle
+	TERM Very_Left_m := (0, 1) (20, 0) ;
+	TERM Medium_Left_m := (19, 0) (20, 1) (40, 0) ;
+	TERM Slight_Left_m := (39, 0) (40, 1) (50, 0) ;
+	TERM Slight_Right_m := (50, 0) (60, 1) (61, 0) ;
+	TERM Medium_Right_m := (60, 0) (80, 1) (81, 0) ;
+	TERM Very_Right_m := (80, 0) (100, 1) ;
+END_FUZZIFY
+
+FUZZIFY carAngle
+	TERM Very_Left_a := (0, 1) (20, 0) ;
+	TERM Medium_Left_a := (19, 0) (20, 1) (40, 0) ;
+	TERM Slight_Left_a := (39, 0) (40, 1) (50, 0) ;
+	TERM Slight_Right_a := (50, 0) (60, 1) (61, 0) ;
+	TERM Medium_Right_a := (60, 0) (80, 1) (81, 0) ;
+	TERM Very_Right_a := (80, 0) (100, 1) ;
+END_FUZZIFY
+
+FUZZIFY currentSegment
+	TERM currentLeft := 2 ;
+	TERM currentRight := 1 ;
+	TERM currentStraight := 3 ;
+END_FUZZIFY
+
+FUZZIFY nextSegment
+	TERM nextLeft := 2 ;
+	TERM nextRight := 1 ;
+	TERM nextStraight := 3 ;
+END_FUZZIFY
+
+DEFUZZIFY gearchange
+	TERM Very_Left_s := (0, 1) (20, 0) ;
+	TERM Medium_Left_s := (19, 0) (20, 1) (40, 0) ;
+	TERM Slight_Left_s := (39, 0) (40, 1) (50, 0) ;
+	TERM Slight_Right_s := (50, 0) (60, 1) (61, 0) ;
+	TERM Medium_Right_s := (60, 0) (80, 1) (81, 0) ;
+	TERM Very_Right_s := (80, 0) (100, 1) ;
+	METHOD: COG;
+	DEFAULT := 0;
+END_DEFUZZIFY
+
+RULEBLOCK First
+	AND : MIN;    // [MIN|BDIF|PROD]
+    OR : MAX;     // [MAX|ASUM|BSUM]
+    ACT : MIN;    // [MIN|PROD]
+    ACCU : MAX;   // [MAX|BSUM|NSUM|PROBOR|SUM]
+	RULE 0: IF toMiddle IS Slight_Left_m AND carAngle IS Slight_Left_a THEN Steer IS Slight_Right_s;
+	RULE 1: IF toMiddle IS Slight_Left_m AND carAngle IS Medium_Left_a THEN Steer IS Slight_Right_s;
+	RULE 2: IF toMiddle IS Slight_Left_m AND carAngle IS Very_Left_a THEN Steer IS Slight_Right_s;
+	RULE 3: IF toMiddle IS Medium_Left_m AND carAngle IS Slight_Left_a THEN Steer IS Medium_Right_s;
+	RULE 4: IF toMiddle IS Medium_Left_m AND carAngle IS Medium_Left_a THEN Steer IS Medium_Right_s;
+	RULE 5: IF toMiddle IS Medium_Left_m AND carAngle IS Very_Left_a THEN Steer IS Medium_Right_s;
+	RULE 6: IF toMiddle IS Very_Left_m AND carAngle IS Slight_Left_a THEN Steer IS Very_Right_s;
+	RULE 7: IF toMiddle IS Very_Left_m AND carAngle IS Medium_Left_a THEN Steer IS Very_Right_s;
+	RULE 8: IF toMiddle IS Very_Left_m AND carAngle IS Very_Left_a THEN Steer IS Very_Right_s;
+	RULE 9: IF toMiddle IS Slight_Right_m AND carAngle IS Slight_Left_a THEN Steer IS Slight_Left_s;
+	RULE 10: IF toMiddle IS Slight_Right_m AND carAngle IS Medium_Left_a THEN Steer IS Slight_Left_s;
+	RULE 11: IF toMiddle IS Slight_Right_m AND carAngle IS Very_Left_a THEN Steer IS Slight_Left_s;
+	RULE 12: IF toMiddle IS Medium_Right_m AND carAngle IS Slight_Left_a THEN Steer IS Medium_Left_s;
+	RULE 13: IF toMiddle IS Medium_Right_m AND carAngle IS Medium_Left_a THEN Steer IS Medium_Left_s;
+	RULE 14: IF toMiddle IS Medium_Right_m AND carAngle IS Very_Left_a THEN Steer IS Medium_Left_s;
+	RULE 15: IF toMiddle IS Very_Right_m AND carAngle IS Slight_Left_a THEN Steer IS Very_Left_s;
+	RULE 16: IF toMiddle IS Very_Right_m AND carAngle IS Medium_Left_a THEN Steer IS Very_Left_s;
+	RULE 17: IF toMiddle IS Very_Right_m AND carAngle IS Very_Left_a THEN Steer IS Very_Left_s;
+	RULE 18: IF toMiddle IS Slight_Left_m AND carAngle IS Slight_Right_a THEN Steer IS Slight_Right_s;
+	RULE 19: IF toMiddle IS Slight_Left_m AND carAngle IS Medium_Right_a THEN Steer IS Slight_Right_s;
+	RULE 20: IF toMiddle IS Slight_Left_m AND carAngle IS Very_Right_a THEN Steer IS Slight_Right_s;
+	RULE 21: IF toMiddle IS Medium_Left_m AND carAngle IS Slight_Right_a THEN Steer IS Medium_Right_s;
+	RULE 22: IF toMiddle IS Medium_Left_m AND carAngle IS Medium_Right_a THEN Steer IS Medium_Right_s;
+	RULE 23: IF toMiddle IS Medium_Left_m AND carAngle IS Very_Right_a THEN Steer IS Medium_Right_s;
+	RULE 24: IF toMiddle IS Very_Left_m AND carAngle IS Slight_Right_a THEN Steer IS Very_Right_s;
+	RULE 25: IF toMiddle IS Very_Left_m AND carAngle IS Medium_Right_a THEN Steer IS Very_Right_s;
+	RULE 26: IF toMiddle IS Very_Left_m AND carAngle IS Very_Right_a THEN Steer IS Very_Right_s;
+	RULE 27: IF toMiddle IS Slight_Right_m AND carAngle IS Slight_Right_a THEN Steer IS Slight_Left_s;
+	RULE 28: IF toMiddle IS Slight_Right_m AND carAngle IS Medium_Right_a THEN Steer IS Slight_Left_s;
+	RULE 29: IF toMiddle IS Slight_Right_m AND carAngle IS Very_Right_a THEN Steer IS Slight_Left_s;
+	RULE 30: IF toMiddle IS Medium_Right_m AND carAngle IS Slight_Right_a THEN Steer IS Medium_Left_s;
+	RULE 31: IF toMiddle IS Medium_Right_m AND carAngle IS Medium_Right_a THEN Steer IS Medium_Left_s;
+	RULE 32: IF toMiddle IS Medium_Right_m AND carAngle IS Very_Right_a THEN Steer IS Medium_Left_s;
+	RULE 33: IF toMiddle IS Very_Right_m AND carAngle IS Slight_Right_a THEN Steer IS Very_Left_s;
+	RULE 34: IF toMiddle IS Very_Right_m AND carAngle IS Medium_Right_a THEN Steer IS Very_Left_s;
+	RULE 35: IF toMiddle IS Very_Right_m AND carAngle IS Very_Right_a THEN Steer IS Very_Left_s;
+
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
