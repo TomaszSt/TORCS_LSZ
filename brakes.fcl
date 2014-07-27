@@ -1,21 +1,62 @@
-(* FCL File Created From FFLL Model : Thu Sep 06 10:39:12 2001 *)
-FUNCTION_BLOCK
+FUNCTION_BLOCK brakes
 
 VAR_INPUT
-	Speed REAL; (* RANGE(0 .. 100) *)
+	speed			: REAL;
+	toMiddle		: REAL;
+	carAngle		: REAL;
+	currSegment 	: REAL;
+	nextSegment 	: REAL;
+	nextAngle		: REAL;
+	nextArc			: REAL;
+	nextLength		: REAL;
+	distance		: REAL;
 END_VAR
 
 VAR_OUTPUT
-	Brake REAL; (* RANGE(0 .. 100) *) 
+	Brake			: REAL;
 END_VAR
 
-FUZZIFY Speed
-	TERM Initial := (0, 0) (30, 1) (60, 0);
+FUZZIFY speed
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
 END_FUZZIFY
 
-FUZZIFY Brake
-	TERM Low := (10, 0) (20, 1) (30, 0);
+FUZZIFY toMiddle
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
 END_FUZZIFY
+
+FUZZIFY carAngle
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+FUZZIFY currSegment
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+FUZZIFY nextSegment
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+FUZZIFY nextAngle
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+FUZZIFY nextArc
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+FUZZIFY nextLength
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+FUZZIFY distance
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+END_FUZZIFY
+
+DEFUZZIFY Brake
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
+	METHOD: COG;
+	DEFAULT := 0;
+END_DEFUZZIFY
 
 DEFUZZIFY Brake
 	TERM Low := 20;
@@ -23,9 +64,11 @@ DEFUZZIFY Brake
 END_DEFUZZIFY
 
 RULEBLOCK first
-	AND:MIN;
-	ACCU:MAX;
-	RULE 0: IF (Speed IS Initial) THEN (Brake IS Low);
+	AND : MIN;    // [MIN|BDIF|PROD]
+    OR : MAX;     // [MAX|ASUM|BSUM]
+    ACT : MIN;    // [MIN|PROD]
+    ACCU : MAX;   // [MAX|BSUM|NSUM|PROBOR|SUM]
+	RULE 1: IF (Speed IS Initial) THEN (Brake IS Low);
 END_RULEBLOCK
 
 END_FUNCTION_BLOCK
