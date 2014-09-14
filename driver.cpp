@@ -521,13 +521,16 @@ int Driver::getGear()
 	if (useFclForGear) {
 		double rpmP = rpm/redLine * 100;
 		int rpmPP = (int) rpmP;
-
-		printf("RPM = %d\tSPD = %d\n", rpmPP, speedD);
-		GearModel.setVariable(inputs_gear.at(0), rpmPP , funct_blocks_gear.at(0));
-		GearModel.setVariable(inputs_gear.at(1),  speedD, funct_blocks_gear.at(0));
+		//printf("setting first var\n");
+		GearModel.setVariable(inputs_gear.at(1), rpmPP , funct_blocks_gear.at(0));
+		//printf("setting sec var\n");
+		GearModel.setVariable(inputs_gear.at(0),  speedD, funct_blocks_gear.at(0));
+		//printf("evaluating\n");
 		GearModel.evaluate(funct_blocks_gear.at(0));
-		int output = (int) GearModel.getValue(outputs_gear.at(0));
-		printf("%d\n",output);
+		//printf("evaluated\n");
+		double origOutput = GearModel.getValue(outputs_gear.at(0));
+		int output = (int) (origOutput + 0.5);
+		printf("RPM = %d\tSPD = %d\tOUT = %d [%f]\n", rpmPP, speedD, output, origOutput);
 		switch((int)output) {
 		case 0:
 			return car->_gear + 1;
