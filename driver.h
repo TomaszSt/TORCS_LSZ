@@ -203,6 +203,11 @@ class Driver {
 		bool useFclForGear;
 		bool useFclForSteering;
 
+		bool debugBrakes;
+		bool debugAccel;
+		bool debugGear;
+		bool debugSteering;
+
 		// Track variables.
 		tTrack* track;
 };

@@ -226,6 +226,18 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 		if (key.compare("steer") == 0) {
 			if (value.compare("1") == 0) useFclForSteering = true; else useFclForSteering = false;
 		}
+		if (key.compare("brakes_d") == 0) {
+			if (value.compare("1") == 0) debugBrakes = true; else useFclForBrakes = false;
+		}
+		if (key.compare("accel_d") == 0) {
+			if (value.compare("1") == 0) debugAccel = true; else useFclForAccel = false;
+		}
+		if (key.compare("gear_d") == 0) {
+			if (value.compare("1") == 0) debugGear = true; else useFclForGear = false;
+		}
+		if (key.compare("steer_d") == 0) {
+			if (value.compare("1") == 0) debugSteering = true; else useFclForSteering = false;
+		}
 	}
 
 	if (useFclForSteering) {
@@ -406,8 +418,7 @@ float Driver::getAccel()
 		float tempNextArc = nextArc * 30.0;
 		float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
 		float tempNextTurnLength = nextTurnLength / 5.0;
-		printf("SPD = %d MDL = %.0f, CANG = %.0f NANG = %.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
-			speedD, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
+		
 		AccelModel.setVariable(inputs_accel.at(0), speedD , funct_blocks_accel.at(0));
 		AccelModel.setVariable(inputs_accel.at(1),  tempNextArc, funct_blocks_accel.at(0));
 		AccelModel.setVariable(inputs_accel.at(2),  tempAvgNextTurnAngle, funct_blocks_accel.at(0));
@@ -423,6 +434,10 @@ float Driver::getAccel()
 		AccelModel.evaluate(funct_blocks_accel.at(0));
 		double output = AccelModel.getValue(outputs_accel.at(0));
 		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		if (debugAccel) {
+			printf("SPD=%d ARC=%.0f TANG=%.0f DS=%.2f NS=%d ANG=%.0f CS=%d TM=%.0f NL=%.0f OUT=%.3f\n", 
+				speedD, tempNextArc, tempAvgNextTurnAngle, tempDistanceToNextTurn, nextSegType, carAngle, currentSegType, toMiddleP, tempNextTurnLength, output);
+		}
 		return output;
 	} else {
 		if (car->_gear > 0) {
@@ -462,8 +477,6 @@ float Driver::getBrake()
 		float tempNextArc = nextArc * 30.0;
 		float tempDistanceToNextTurn = distanceToNextTurn / 5.0;
 		float tempNextTurnLength = nextTurnLength / 5.0;
-		//printf("SPD = %d MDL = %.0f, CANG = %.0f NANG = %.2f ARC = %.2f LEN = %.0f DIST = %.0f\n", 
-		//	speedD, toMiddleP, carAngle, tempAvgNextTurnAngle, tempNextArc, tempNextTurnLength, tempDistanceToNextTurn);
 		BrakesModel.setVariable(inputs_brakes.at(0), speedD , funct_blocks_brakes.at(0));
 		BrakesModel.setVariable(inputs_brakes.at(1),  tempNextArc, funct_blocks_brakes.at(0));
 		BrakesModel.setVariable(inputs_brakes.at(2),  tempAvgNextTurnAngle, funct_blocks_brakes.at(0));
@@ -479,6 +492,10 @@ float Driver::getBrake()
 		BrakesModel.evaluate(funct_blocks_brakes.at(0));
 		double output = BrakesModel.getValue(outputs_brakes.at(0));
 		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		if (debugBrakes) {
+			printf("SPD=%d ARC=%.0f TANG=%.0f DS=%.2f NS=%d ANG=%.0f CS=%d TM=%.0f NL=%.0f OUT=%.3f\n", 
+				speedD, tempNextArc, tempAvgNextTurnAngle, tempDistanceToNextTurn, nextSegType, carAngle, currentSegType, toMiddleP, tempNextTurnLength, output);
+		}
 		return output;
 
 	}
@@ -525,12 +542,14 @@ int Driver::getGear()
 		GearModel.setVariable(inputs_gear.at(1), rpmPP , funct_blocks_gear.at(0));
 		GearModel.setVariable(inputs_gear.at(0),  speedD, funct_blocks_gear.at(0));
 		/*for (int i = 0 ; i < inputs_gear.size() ; i++) {
-			printf("gear[%d] = %s\n", i, inputs_gear.at(i).toLocal8Bit().data() );
+		printf("gear[%d] = %s\n", i, inputs_gear.at(i).toLocal8Bit().data() );
 		}*/
 		GearModel.evaluate(funct_blocks_gear.at(0));
 		double origOutput = GearModel.getValue(outputs_gear.at(0));
 		int output = (int) (origOutput + 0.5);
-		//printf("RPM = %d\tSPD = %d\tOUT = %d [%f]\n", rpmPP, speedD, output, origOutput);
+		if (debugGear) {
+			printf("RPM = %d\tSPD = %d\tOUT = %d [%f]\n", rpmPP, speedD, output, origOutput);
+		}
 		switch((int)output) {
 		case 0:
 			return car->_gear + 1;
@@ -571,14 +590,16 @@ float Driver::getSteer()
 		SteerModel.setVariable(inputs_steer.at(1),  nextSegType, funct_blocks_steer.at(0));
 		SteerModel.setVariable(inputs_steer.at(2),  carAngle, funct_blocks_steer.at(0));
 		SteerModel.setVariable(inputs_steer.at(3),  toMiddleP, funct_blocks_steer.at(0));		
-		for (int i = 0 ; i < inputs_steer.size() ; i++) {
-			printf("steer[%d] = %s\n", i, inputs_steer.at(i).toLocal8Bit().data() );
-		}
+		//for (int i = 0 ; i < inputs_steer.size() ; i++) {
+		//	printf("steer[%d] = %s\n", i, inputs_steer.at(i).toLocal8Bit().data() );
+		//}
 		SteerModel.evaluate(funct_blocks_steer.at(0));
 		double output = SteerModel.getValue(outputs_steer.at(0));
 		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		if (debugSteering) {
+			printf("CUR=%d NXT=%d ANG=%.1f MID=%.1f OUT=%.3f\n", currentSegType, nextSegType, carAngle, toMiddleP, output);
+		}
 		return output;
-		//printf("MID = %.1f\tANG = %.1f\tOUT = %.3f\tRET = %.3f\n", toMiddleP, carAngle, outputF, toReturn);
 	} else {
 
 		float targetAngle;
