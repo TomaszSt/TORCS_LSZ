@@ -1,4 +1,4 @@
-FUNCTION_BLOCK brakes
+FUNCTION_BLOCK brake
 
 VAR_INPUT
 	speed			: REAL;
@@ -13,7 +13,7 @@ VAR_INPUT
 END_VAR
 
 VAR_OUTPUT
-	Brake			: REAL;
+	brake			: REAL;
 END_VAR
 
 FUZZIFY speed
@@ -52,19 +52,18 @@ FUZZIFY distance
 	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
 END_FUZZIFY
 
-DEFUZZIFY Brake
-	TERM initial := 1;
+DEFUZZIFY brake
+	TERM initial := (0, 0) (10, 0) (30, 1) (60, 1) (90, 0) (100, 0);
 	METHOD: COG;
 	DEFAULT := 0;
 END_DEFUZZIFY
-
 
 RULEBLOCK first
 	AND : MIN;    // [MIN|BDIF|PROD]
     OR : MAX;     // [MAX|ASUM|BSUM]
     ACT : MIN;    // [MIN|PROD]
     ACCU : MAX;   // [MAX|BSUM|NSUM|PROBOR|SUM]
-	RULE 1: IF speed IS Initial THEN Brake IS initial;
+	RULE 1: IF Speed IS initial THEN brake IS initial;
 END_RULEBLOCK
 
 END_FUNCTION_BLOCK

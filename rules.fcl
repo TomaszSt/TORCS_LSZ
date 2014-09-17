@@ -39,7 +39,7 @@ RULEBLOCK First
 	RULE 4 : IF ((rpm IS low_r) AND (speed IS high_s)) THEN gearchange IS down;
 	RULE 5 : IF ((rpm IS medium_r) AND (speed IS low_s)) THEN gearchange IS keep;
 	RULE 6 : IF ((rpm IS medium_r) AND (speed IS high_s)) THEN gearchange IS keep;
-	RULE 7: IF (speed IS near_zero) THEN gearchange IS up;
+	RULE 7: IF ((rpm IS high_r) AND (speed IS near_zero)) THEN gearchange IS up;
 END_RULEBLOCK
 
 END_FUNCTION_BLOCK
