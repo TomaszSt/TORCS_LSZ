@@ -473,9 +473,9 @@ float Driver::getBrake()
 		BrakesModel.setVariable(inputs_brakes.at(6),  currentSegType, funct_blocks_brakes.at(0));
 		BrakesModel.setVariable(inputs_brakes.at(7),  toMiddleP, funct_blocks_brakes.at(0));
 		BrakesModel.setVariable(inputs_brakes.at(8),  tempNextTurnLength, funct_blocks_brakes.at(0));
-		for (int i = 0 ; i < inputs_brakes.size() ; i++) {
-			printf("inputs_brakes[%d] = %s\n", i, inputs_brakes.at(i).toLocal8Bit().data() );
-		}
+		//for (int i = 0 ; i < inputs_brakes.size() ; i++) {
+		//	printf("inputs_brakes[%d] = %s\n", i, inputs_brakes.at(i).toLocal8Bit().data() );
+		//}
 		BrakesModel.evaluate(funct_blocks_brakes.at(0));
 		double output = BrakesModel.getValue(outputs_brakes.at(0));
 		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
