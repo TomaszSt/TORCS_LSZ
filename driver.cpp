@@ -203,10 +203,20 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	// create the pit object.
 	pit = new Pit(s, this);
 
-	std::ifstream file("D:\\torcs_fcl.cfg");
-	std::string str; 
+	std::string dirPath = ".\\..\\src\\drivers\\myrobot\\";
+	std::ifstream file(dirPath.append("torcs_fcl.cfg").c_str());
+	std::string str;
+	bool firstLine = true;
 	while (std::getline(file, str))
 	{
+		if (firstLine) {
+			dirPath = str;
+			printf("str: %s\n", str.c_str());
+			printf("dirPath: %s\n", dirPath.c_str()); 
+			firstLine = false;
+			continue;
+		}
+
 		printf("read line ...");
 		std::size_t equalPos = str.find("=");
 		printf("found '=' on [%d]\n", equalPos);
@@ -242,7 +252,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	if (useFclForSteering) {
 		printf("Trying STEER\n");
-		if (SteerModel.load("D:\\steer.fcl"))
+		if (SteerModel.load(dirPath.append("steer.fcl").c_str()))
 		{
 			printf("Loaded STEER\n");
 			funct_blocks_steer = SteerModel.functBlocks();
@@ -253,7 +263,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	if (useFclForAccel) {
 		printf("Trying ACCEL\n");
-		if (AccelModel.load("D:\\accel.fcl"))
+		if (AccelModel.load(dirPath.append("accel.fcl").c_str()))
 		{
 			printf("Loaded ACCEL\n");
 			funct_blocks_accel = AccelModel.functBlocks();
@@ -263,7 +273,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	}
 	if (useFclForBrakes) {
 		printf("Trying BRAKES\n");
-		if (BrakesModel.load("D:\\brakes.fcl"))
+		if (BrakesModel.load(dirPath.append("brakes.fcl").c_str()))
 		{
 			printf("Loaded BRAKES\n");
 			funct_blocks_brakes = BrakesModel.functBlocks();
@@ -274,7 +284,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	if (useFclForGear) {
 		printf("Trying GEAR\n");
-		if (GearModel.load("D:\\rules.fcl"))
+		if (GearModel.load(dirPath.append("rules.fcl").c_str()))
 		{
 			printf("Loaded GEAR\n");
 			funct_blocks_gear = GearModel.functBlocks();
@@ -282,10 +292,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 			outputs_gear = GearModel.outputs(funct_blocks_gear.at(0));
 		}
 	}
-
-
 }
-
 
 // Drive during race.
 void Driver::drive(tSituation *s)
