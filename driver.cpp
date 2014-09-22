@@ -284,7 +284,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 
 	if (useFclForGear) {
 		printf("Trying GEAR\n");
-		if (GearModel.load(dirPath.append("rules.fcl").c_str()))
+		if (GearModel.load(dirPath.append("gear.fcl").c_str()))
 		{
 			printf("Loaded GEAR\n");
 			funct_blocks_gear = GearModel.functBlocks();
@@ -602,11 +602,12 @@ float Driver::getSteer()
 		//}
 		SteerModel.evaluate(funct_blocks_steer.at(0));
 		double output = SteerModel.getValue(outputs_steer.at(0));
-		output /= 100.0; // re-scaling from 0-100 to 0.0-1.0
+		output /= 50.0; // re-scaling from 0-100 to 0.0-2.0
+		output -= 1.0; // re-scaling from 0.0-2.0 to -1.0 - 2.0
 		if (debugSteering) {
 			printf("CUR=%d NXT=%d ANG=%.1f MID=%.1f OUT=%.3f\n", currentSegType, nextSegType, carAngle, toMiddleP, output);
 		}
-		return output;
+		return output * -1.0;
 	} else {
 
 		float targetAngle;
